@@ -6,7 +6,7 @@ Created on Fri Apr 13 08:16:36 2018
 """
 
 from SY32_Project_Tools import *
-import SY32_Prject_Data as data
+import SY32_Project_Data as data
  
 #show_mean("train\\pos")
 
@@ -16,15 +16,25 @@ import SY32_Prject_Data as data
 #pos = read_img_float("train\\pos")
 #neg = read_img_float("train\\neg")
 
-fd_hog_pos = compute_hog("train\\pos")
-fd_hog_neg = compute_hog("train\\neg")
+#fd_hog_pos = compute_hog("train") 
+fd_hog_pos = compute_hog("train\\pos") 
+                                                           
+print("*** fd_hog_pos OK ***")
+
+#fd_hog_neg = compute_hog("../train")
+fd_hog_pos = compute_hog("train\\neg") 
+
+print("*** fd_hog_neg OK ***")
 
 fd_hog, label_hog = label_concat(fd_hog_pos, fd_hog_neg)
 
+print("*** Compute model ***")
 model_hog = clf.fit(fd_hog, label_hog)
-
-#s = pickle.dumps(clf)
+print("*** model OK ***")
+save_model(model_hog, save2.p)
    
+#pos_test = compute_hog("../test")
+#neg_test = compute_hog("../test")
 pos_test = compute_hog("test\\pos")
 neg_test = compute_hog("test\\neg")
 

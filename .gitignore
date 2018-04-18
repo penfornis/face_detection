@@ -1,2 +1,6 @@
 SY32_Project_Path.py
+*.pyc
+/train
+/test
+/oldtrain
 
