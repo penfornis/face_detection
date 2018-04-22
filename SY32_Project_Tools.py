@@ -15,11 +15,12 @@ import pickle
 from skimage import io
 from skimage import feature
 from skimage import color
+from skimage.transform import rescale, resize, downscale_local_mean
 import os
 import glob
 
 from PIL import Image
-
+from SY32_Project_Data import *
 import scipy.misc
 
 
@@ -75,21 +76,22 @@ def show_mean(path):
     
 def cross_validation(x, y, N):
     
-    x = np.reshape(x, (len(x), 24*24))
+    #x = np.reshape(x, (len(x), 24*24))
+    print("début cross validation")
+
     r = np.zeros(N, dtype = float)
 
     for i in range(0,N):
         mask = np.zeros(x.shape[0], dtype = bool)
         mask[np.arange(i, mask.size, N)] = True
-        model = clf.fit(x[~mask,:], y[~mask])
+        clf.fit(x[~mask,:], y[~mask])
         r[i] = np.mean(clf.predict(x[mask]) != y[mask])
     
     error = 0
     for i in range(0,N):
         error += r[i]
     error = error * 100 / N
-    print(error)
-    return model
+    return error
 
 def label_concat(pos, neg):
     train = np.concatenate((pos, neg), axis=0)
@@ -104,48 +106,45 @@ def label_concat(pos, neg):
     train_s, label_s = shuffle(train,label)
     return train_s, label_s
     
-def validation_script(pos, neg):
-    train = np.concatenate((pos, neg), axis=0)
-    label = np.zeros(len(pos)+len(neg), dtype = int)
+def validation_script(pos, neg):    
+    train_s, label_s = label_concat(pos,neg)
+    return cross_validation(train_s, label_s, 5)   
     
-    for i in range(0, len(pos)):
-        label[i] = 1
-    
-    for i in range(len(pos), len(neg)):
-        label[i] = 0
-    
-    train_s, label_s = shuffle(train,label)
-
-
-    model = cross_validation(train_s, label_s, 5)   
-    
-    pos_test = read_img_float("test\\pos")
-    neg_test = read_img_float("test\\neg")
-    
-    test = np.concatenate((pos_test, neg_test), axis=0)
-    test = np.reshape(test, (len(test), 24*24))
-    
-    
-    label_test = np.zeros(len(pos_test)+len(neg_test), dtype = int)
-    for i in range(0, len(pos_test)):
-        label_test[i] = 1
-    
-    for i in range(len(pos_test), len(neg_test)):
-        label_test[i] = 0
-    
-    test = np.mean(clf.predict(test) != label_test)
-    return model
+#    pos_test = read_img_float("test\\pos")
+#    neg_test = read_img_float("test\\neg")
+#    
+#    test = np.concatenate((pos_test, neg_test), axis=0)
+#    test = np.reshape(test, (len(test), 24*24))
+#    
+#    
+#    label_test = np.zeros(len(pos_test)+len(neg_test), dtype = int)
+#    for i in range(0, len(pos_test)):
+#        label_test[i] = 1
+#    
+#    for i in range(len(pos_test), len(neg_test)):
+#        label_test[i] = 0
+#    
+#    test = np.mean(clf.predict(test) != label_test)
+#    return model
     
     
 def save_model(clf, file_name):
-    s = pickle.dump(clf, open (file_name, "wb"))
+    s = pickle.dump(clf, open (origin_path+file_name, "wb"))
     
 def load_model(file_name):
      my_clf=pickle.load(open(file_name, "rb"))
      return my_clf
+ 
+def detect_faces(path):
+    os.chdir(origin_path+path)
+    images = glob.glob("*.jpg")
+    
+    for img in images:
+        image = io.imread(img)
+        sliding_window(image, img, 32, 2)
        
 		
-def sliding_window(image, size, jump):
+def sliding_window(image, img, size, jump):
     
     image = color.rgb2gray(image)
     
@@ -155,7 +154,8 @@ def sliding_window(image, size, jump):
     image_height = len(image)
     
     min_length = min(image_width, image_height)
-    ratio = size*2/min_length
+    ratio = (size*2)/min_length
+    #Amélioration : ici si on ne trouve pas de visage, il faut essayer avec un autre ratio
     
     image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
     top = 0
@@ -173,15 +173,21 @@ def sliding_window(image, size, jump):
             #io.imshow(box)
             box = image_resize[top:top+box_height, left:left+box_width]
             image_hog = feature.hog(box)
+            #clf = svm.LinearSVC(0.01)
             if clf.predict(image_hog.reshape(1,-1)):
             #    results[k] = [top, left]
             #    k = k + 1
-                results[k][0] = 1
-                results[k][1] = left
-                results[k][2] = top
-                k = k+1
-                box = image_resize[top:top+box_height, left:left+box_width]
-                scipy.misc.imsave(origin_path+'\\results\\positive'+str(k)+".jpg", box)
+                intersection =  intersect(results[k-1][1], results[k-1][2], box_width, box_height, left, top, box_width, box_height)
+                ### Ici il faudrait regarder quand on a plusieurs carrés qui s'intersectent, il y a plus de chances que ce soit un vrai visage
+                ### Donc il faudrait compter le nombre de carrés, et garder le plus central
+                if (intersection < 5):
+                    print(intersection)
+                    results[k][0] = 1
+                    results[k][1] = left
+                    results[k][2] = top
+                    k = k+1
+                    box = image_resize[top:top+box_height, left:left+box_width]
+                    scipy.misc.imsave(origin_path+'\\results\\positive'+str(img)+".jpg", box)
             left = left + jump
         print("fin ligne")
         left = 0
@@ -191,4 +197,14 @@ def sliding_window(image, size, jump):
 
 
     
-    
+def detect_face_script():
+    clf = load_model(origin_path+"save_model_001.p")
+    return detect_faces("\\test")
+
+
+def cross_validation_script(c):
+    clf = svm.LinearSVC(C=c)
+    fd_hog_pos = compute_hog("\\label") 
+    fd_hog_neg = compute_hog("\\neg") 
+
+    return validation_script(fd_hog_pos, fd_hog_neg)
