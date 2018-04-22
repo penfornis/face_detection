@@ -20,10 +20,13 @@ import glob
 
 from PIL import Image
 
+import scipy.misc
+
+
 import matplotlib.pyplot as plt
 clf = svm.LinearSVC()
 #origin_path = "C:\\Users\\sy32p009\\Documents\\SY32_PART2\\TD 02 - Classification dimages-20180409\\imageface\\imageface\\"
-origin_path = ""
+origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
 
 def read_img_float(path):
     os.chdir(origin_path+path)
@@ -47,13 +50,13 @@ def compute_hog(path):
     #fd_hog = np.zeros(shape=(len(images), 6804), dtype=float)
 	#image_hog = np.zeros(shape=(len(images), len(io.imread(images[0])), len(io.imread(images[0])[0])), dtype=float)
 
-    fd_hog = np.zeros(shape=(len(images), 311364), dtype=float)
-    image_hog = np.zeros(shape=(len(images), 512, 512), dtype=float)
+    fd_hog = np.zeros(shape=(len(images), 324), dtype=float)
+    image_hog = np.zeros(shape=(len(images), 32, 32), dtype=float)
     
     for i in images:
         image = io.imread(i)
         image = color.rgb2gray(image)
-        image.resize(512,512)
+        #image.resize(32,32)
         fd_hog[j], image_hog[j] = feature.hog(image, visualise=True)
         j = j+1
     
@@ -140,73 +143,52 @@ def save_model(clf, file_name):
 def load_model(file_name):
      my_clf=pickle.load(open(file_name, "rb"))
      return my_clf
-     
-     
-def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
-	# 1 : fenêtre glissante
-	# 2 : label
-	x3 = max(x1, x2)
-	print("x3", x3)
-	y3 = max(y1, y2)
-	print("y3", y3)
-	
-	x4 = min(x1+w1, x2+w2)
-	print("x4", x4)
-	y4 = min(y1+h1, y2+h2)
-	print("y4", y4)
-	
-	if x3 > x4:
-		return 0
-	else:
-		aire = abs(x4 - x3) * abs(y4 - y3)
-		print("aire", aire)
+       
 		
-		label_aire = w2 * h2
-		print("label aire", label_aire)
-		ratio = (float(aire)/float(label_aire))*100
-		print("ratio", ratio)
-		
-		if ratio > 90:
-			return ratio
-		else:
-			return 0  
-		
-def sliding_window(image):
-	
-	label = open("label.txt", "rb")
-	label = label.readline().split()
-	
-	image = color.rgb2gray(image)
-	left = 0
-	top = 0
-	width = 163
-	height = 236
-	saut=3
-	#area = image[top:top+height, left:left+width]
-	#io.imshow(area)
-        
-	results = np.zeros(shape=(((len(image)-height)//saut)*((len(image[0])-width)//saut), 3), dtype = int)
-	k = 0
+def sliding_window(image, size, jump):
     
-	for i in range(0, (len(image)-height)//saut):
-		for j in range(0, (len(image[0])-width)//saut):
-			box = image[top:top+height, left:left+width]
-			#io.imshow(box)
-			image_hog = feature.hog(box)
-			print(len(image_hog))
-			#if clf.predict(image_hog):
-			#    results[k] = [top, left]
-            #    k = k + 1
-			results[k][0] = intersect(left, top, width, height, int(label[1]), int(label[2]), int(label[3]), int(label[4]))
-			results[k][1] = left
-			results[k][2] = top
-			k = k+1
-			left = left + saut
-		print("fin ligne")
-		left = 0
-		top = top + saut
+    image = color.rgb2gray(image)
+    
+    box_height = size
+    box_width = size
+    image_width = len(image[0])
+    image_height = len(image)
+    
+    min_length = min(image_width, image_height)
+    ratio = size*2/min_length
+    
+    image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
+    top = 0
+    left = 0
+    k = 0
+    
+    width = max(0, (len(image[0])-box_width))
+    height = max(0, (len(image)-box_height))
+    results = np.zeros(shape=((height//jump)*(width//jump), 3), dtype = int)
+        
+    
+    for i in range(0, (len(image_resize)-box_height)//jump):
+        for j in range(0, (len(image_resize[0])-box_width)//jump):
             
-	return results
+            #io.imshow(box)
+            box = image_resize[top:top+box_height, left:left+box_width]
+            image_hog = feature.hog(box)
+            if clf.predict(image_hog.reshape(1,-1)):
+            #    results[k] = [top, left]
+            #    k = k + 1
+                results[k][0] = 1
+                results[k][1] = left
+                results[k][2] = top
+                k = k+1
+                box = image_resize[top:top+box_height, left:left+box_width]
+                scipy.misc.imsave(origin_path+'\\results\\positive'+str(k)+".jpg", box)
+            left = left + jump
+        print("fin ligne")
+        left = 0
+        top = top + jump
+            
+    return results
+
 
     
     
