@@ -42,7 +42,13 @@ def read_img_float(path):
     
 #def rgb2gray(rgb):
 #	return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
-    
+
+def get_resize_bw_image(name, box_width, box_height):
+    image = io.imread(name)
+    image = color.rgb2gray(image)
+    resize(image, (box_height, box_width))
+    return image
+
 def compute_hog(path):
     os.chdir(origin_path+path)
     images = glob.glob("*.jpg")
@@ -55,8 +61,7 @@ def compute_hog(path):
     image_hog = np.zeros(shape=(len(images), 32, 32), dtype=float)
     
     for i in images:
-        image = io.imread(i)
-        image = color.rgb2gray(image)
+        image = get_resize_bw_image(i, 32, 32)
         #image.resize(32,32)
         fd_hog[j], image_hog[j] = feature.hog(image, visualise=True)
         j = j+1
@@ -71,27 +76,9 @@ def show_mean(path):
     
     mean_display = io.imshow(mean)
     plt.show(mean_display)
-    
 
-    
-def cross_validation(x, y, N):
-    
-    #x = np.reshape(x, (len(x), 24*24))
-    print("début cross validation")
 
-    r = np.zeros(N, dtype = float)
 
-    for i in range(0,N):
-        mask = np.zeros(x.shape[0], dtype = bool)
-        mask[np.arange(i, mask.size, N)] = True
-        clf.fit(x[~mask,:], y[~mask])
-        r[i] = np.mean(clf.predict(x[mask]) != y[mask])
-    
-    error = 0
-    for i in range(0,N):
-        error += r[i]
-    error = error * 100 / N
-    return error
 
 def label_concat(pos, neg):
     train = np.concatenate((pos, neg), axis=0)
@@ -102,13 +89,10 @@ def label_concat(pos, neg):
     
     for i in range(len(pos), len(neg)):
         label[i] = 0
-
-    train_s, label_s = shuffle(train,label)
-    return train_s, label_s
+        
+    return train, label
     
-def validation_script(pos, neg):    
-    train_s, label_s = label_concat(pos,neg)
-    return cross_validation(train_s, label_s, 5)   
+ 
     
 #    pos_test = read_img_float("test\\pos")
 #    neg_test = read_img_float("test\\neg")
@@ -144,56 +128,79 @@ def detect_faces(path):
         sliding_window(image, img, 32, 2)
        
 		
+#Prends en entrée une image non modifiée (en couleur)
 def sliding_window(image, img, size, jump):
     
     image = color.rgb2gray(image)
-    
-    box_height = size
-    box_width = size
     image_width = len(image[0])
     image_height = len(image)
     
+    box_height = size
+    box_width = size
+    
+    max_size = max(box_height, box_width)
+    r = 1
+    
     min_length = min(image_width, image_height)
-    ratio = (size*2)/min_length
     #Amélioration : ici si on ne trouve pas de visage, il faut essayer avec un autre ratio
+    #k = 0
     
-    image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
-    top = 0
-    left = 0
-    k = 0
+    #width = max(0, (len(image[0])-box_width))
+    #height = max(0, (len(image)-box_height))
+    #results = np.zeros(shape=((height//jump)*(width//jump), 3), dtype = int)
+    #results = np.zeros(shape=(10, 6), dtype = int)   
     
-    width = max(0, (len(image[0])-box_width))
-    height = max(0, (len(image)-box_height))
-    results = np.zeros(shape=((height//jump)*(width//jump), 3), dtype = int)
-        
-    
-    for i in range(0, (len(image_resize)-box_height)//jump):
-        for j in range(0, (len(image_resize[0])-box_width)//jump):
-            
-            #io.imshow(box)
-            box = image_resize[top:top+box_height, left:left+box_width]
-            image_hog = feature.hog(box)
-            #clf = svm.LinearSVC(0.01)
-            if clf.predict(image_hog.reshape(1,-1)):
-            #    results[k] = [top, left]
-            #    k = k + 1
-                intersection =  intersect(results[k-1][1], results[k-1][2], box_width, box_height, left, top, box_width, box_height)
-                ### Ici il faudrait regarder quand on a plusieurs carrés qui s'intersectent, il y a plus de chances que ce soit un vrai visage
-                ### Donc il faudrait compter le nombre de carrés, et garder le plus central
-                if (intersection < 5):
-                    print(intersection)
-                    results[k][0] = 1
-                    results[k][1] = left
-                    results[k][2] = top
-                    k = k+1
-                    box = image_resize[top:top+box_height, left:left+box_width]
-                    scipy.misc.imsave(origin_path+'\\results\\positive'+str(img)+".jpg", box)
-            left = left + jump
-        print("fin ligne")
+    X = -100
+    Y = -100
+    score = 0
+    while (X == -100):
+        top = 0
         left = 0
-        top = top + jump
+        
+        r = r + 0.5
+        ratio = (max_size*r)/min_length
+        #Amélioration : ici si on ne trouve pas de visage, il faut essayer avec un autre ratio
+        
+        image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
+       
+
+        for i in range(0, (len(image_resize)-box_height)//jump):
+            for j in range(0, (len(image_resize[0])-box_width)//jump):
+                
+                #io.imshow(box)
+                box = image_resize[top:top+box_height, left:left+box_width]
+                image_hog = feature.hog(box)
+                #clf = svm.LinearSVC(0.01)
+                if clf.predict(image_hog.reshape(1,-1)):
+                    #print("decision")
+                    new_score = clf.decision_function(image_hog.reshape(1,-1))
+                    #print(new_score)
+                    #print("fin")
+                    #results[k] = [top, left]
+                    #k = k + 1
+                    #intersection =  intersect(X, Y, box_width, box_height, left, top, box_width, box_height)
+                    ### Ici il faudrait regarder quand on a plusieurs carrés qui s'intersectent, il y a plus de chances que ce soit un vrai visage
+                    ### Donc il faudrait compter le nombre de carrés, et garder le plus central
+                    if (new_score > 0.4) & (new_score > score):
+                        #print(intersection)
+                        X = left
+                        Y = top    
+                        score = new_score
+                        # k = k+1
+                        #box = image_resize[top:top+49, left:left+box_width]
+                        #scipy.misc.imsave(origin_path+'\\results\\positive'+str(img)+".jpg", box)
+                left = left + jump
+            #print("fin ligne")
+            left = 0
+            top = top + jump
             
-    return results
+    window_x = int(X/ratio)
+    window_y = int(Y/ratio)
+    window_width = int(box_width/ratio)
+    window_height = int(box_height/ratio)
+    
+#            
+    return window_x, window_y, window_width, window_height, new_score
 
 
     
@@ -201,10 +208,3 @@ def detect_face_script():
     clf = load_model(origin_path+"save_model_001.p")
     return detect_faces("\\test")
 
-
-def cross_validation_script(c):
-    clf = svm.LinearSVC(C=c)
-    fd_hog_pos = compute_hog("\\label") 
-    fd_hog_neg = compute_hog("\\neg") 
-
-    return validation_script(fd_hog_pos, fd_hog_neg)

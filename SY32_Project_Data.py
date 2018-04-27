@@ -44,62 +44,87 @@ origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Re
 ########
 
 
-def get_box_positives(path):
+#def get_box_positives(path):
+#    os.chdir(origin_path)
+#    labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
+#    os.chdir(origin_path+path)
+#    images = glob.glob("*.jpg")
+#    
+#    box_heigth = 200
+#    box_width = 200
+#    fd_hog = np.zeros(shape=(len(images), 42849), dtype=float)
+#    image_hog = np.zeros(shape=(len(images),box_heigth,box_width), dtype=float)
+#
+#    j = 0
+#    for i in images:
+#        image = []
+#        box = []
+#        
+#        top = labels[j]["y"]
+#        left = labels[j]["x"]
+#        width = labels[j]["width"]
+#        height = labels[j]["height"]
+#        
+#        image = io.imread(i)
+#        image_grey = color_to_grey(image)
+#        
+#        max_length = max(width, height)
+#        ratio = box_width / max_length
+#        
+#        
+#        image_resize = resize(image, (int(len(image[0])*ratio), int(len(image)*ratio)))
+#    
+#        
+#        box = image_grey[top:top+height, left:left+width]
+#        
+#        scipy.misc.imsave('outfile.jpg', box)
+#        print(str(j) + " " + str(top) + " " + str(left) + " " +str(width) + " " +str(height))
+#        
+#        box_resize = resize(box, (box_heigth, box_width))
+#        
+#        fd_hog[j], image_hog[j] = feature.hog(box_resize, visualise=True)
+#        print(len(fd_hog))
+#        
+#        if(False):
+#            plt.imshow(image_hog[j])
+#            plt.show()
+#            plt.imshow(image)
+#            plt.show()
+#            plt.imshow(box_resize)
+#            plt.show()
+#        #time.sleep(5)
+#        j = j+1
+#    return fd_hog,image_hog
+
+def get_labels():
     os.chdir(origin_path)
     labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
+    return labels
+
+def get_images(path):
     os.chdir(origin_path+path)
     images = glob.glob("*.jpg")
+    return images
     
-    box_heigth = 200
-    box_width = 200
-    fd_hog = np.zeros(shape=(len(images), 42849), dtype=float)
-    image_hog = np.zeros(shape=(len(images),box_heigth,box_width), dtype=float)
+#Renvoie la taille moyenne d'une box d'après l'ensemble de test
+def get_box_size():
+    os.chdir(origin_path)
+    labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
+    width = 0
+    height = 0
+    for label in labels:
+        width = width + label["width"]
+        height = height + label["height"]
+    mean_width = width // len(labels)
+    mean_height = height // len(labels)
+    
+    return mean_width, mean_height
+    
+    
 
-    j = 0
-    for i in images:
-        image = []
-        box = []
-        
-        top = labels[j]["y"]
-        left = labels[j]["x"]
-        width = labels[j]["width"]
-        height = labels[j]["height"]
-        
-        image = io.imread(i)
-        image_grey = color_to_grey(image)
-        
-        max_length = max(width, height)
-        ratio = box_width / max_length
-        
-        
-        image_resize = resize(image, (int(len(image[0])*ratio), int(len(image)*ratio)))
-    
-        
-        box = image_grey[top:top+height, left:left+width]
-        
-        scipy.misc.imsave('outfile.jpg', box)
-        print(str(j) + " " + str(top) + " " + str(left) + " " +str(width) + " " +str(height))
-        
-        box_resize = resize(box, (box_heigth, box_width))
-        
-        fd_hog[j], image_hog[j] = feature.hog(box_resize, visualise=True)
-        print(len(fd_hog))
-        
-        if(False):
-            plt.imshow(image_hog[j])
-            plt.show()
-            plt.imshow(image)
-            plt.show()
-            plt.imshow(box_resize)
-            plt.show()
-        #time.sleep(5)
-        j = j+1
-    return fd_hog,image_hog
-#def get_box()
 def color_to_grey(image):
     # on va peut être jouer sur la saturation des couleurs après alors je la met de coté
     return color.rgb2gray(image)
-
      
 def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
     # 1 : fenêtre glissante
@@ -115,15 +140,16 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
     if ((x3 >= x4) | (y3 >= y4)):
         return 0
     else:
-        aire = abs(x4 - x3) * abs(y4 - y3)
+        inter = abs(x4 - x3) * abs(y4 - y3)
         #print("aire", aire)
+        union = w1 * h1 + w2 * h2 - inter
 		
-        label_aire = w2 * h2
-        ratio = (float(aire)/float(label_aire))*100
+        ratio = (float(inter)/float(union))*100
         #print("ratio", ratio)
 		
         return ratio
-    
+
+#Selectionne des images négatives à partir des labels    
 def sliding_box(image, img, size, jump, bmax, bmin, label_x, label_y, label_width, label_height):
     box_width = size
     box_height = size
