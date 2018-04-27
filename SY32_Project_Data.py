@@ -188,10 +188,8 @@ def sliding_box(image, img, size, jump, bmax, bmin, label_x, label_y, label_widt
 
 def generate_train_data(path, size, jump, bmax, bmin):
     
-    os.chdir(origin_path)
-    labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
-    os.chdir(origin_path+path)
-    images = glob.glob("*.jpg")
+    labels = get_labels()
+    images = get_images(path)
     
     j=0
     for img in images:

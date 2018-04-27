@@ -104,7 +104,8 @@ def cross_validation_sliding_window(images, labels, x, y, N):
             
             # on test sur 1/5
             image = io.imread(img)
-            window_x, window_y, window_width, window_height, window_score = sliding_window(image, img, 32, 2)
+            print(num)
+            window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, 32, 2)
             
             intersection = intersect(window_x, window_y, window_width, window_height, label_x, label_y, label_width, label_height)
            

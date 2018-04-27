@@ -125,13 +125,23 @@ def detect_faces(path):
     
     for img in images:
         image = io.imread(img)
-        sliding_window(image, img, 32, 2)
+        num = img.split(".")
+        num = int(num[0])
+        window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, 32, 2)
+        window = image[window_y:window_y+window_height, window_x:window_x+window_width]
+        print(len(image))
+        print(len(image[0]))
+        print(window_x)
+        print(window_y)
+        print(window_width)
+        print(window_height)
+        scipy.misc.imsave(origin_path+'\\results\\positive'+str(num)+".jpg", window)
        
 		
 #Prends en entrée une image non modifiée (en couleur)
-def sliding_window(image, img, size, jump):
+def sliding_window(image_orig, num, size, jump):
     
-    image = color.rgb2gray(image)
+    image = color.rgb2gray(image_orig)
     image_width = len(image[0])
     image_height = len(image)
     
@@ -142,18 +152,15 @@ def sliding_window(image, img, size, jump):
     r = 1
     
     min_length = min(image_width, image_height)
-    #Amélioration : ici si on ne trouve pas de visage, il faut essayer avec un autre ratio
-    #k = 0
+    results = np.zeros(shape=(10, 5), dtype = float)   
+    nb_results = 0
     
-    #width = max(0, (len(image[0])-box_width))
-    #height = max(0, (len(image)-box_height))
-    #results = np.zeros(shape=((height//jump)*(width//jump), 3), dtype = int)
-    #results = np.zeros(shape=(10, 6), dtype = int)   
+    x = -100
+    y = -100
     
-    X = -100
-    Y = -100
-    score = 0
-    while (X == -100):
+    #On itère jusqu'à trouver un visage en changeant la taille de l'image d'origine
+    #On pourrait comparer plusieurs tailles d'image
+    while (x == -100):
         top = 0
         left = 0
         
@@ -174,34 +181,62 @@ def sliding_window(image, img, size, jump):
                 if clf.predict(image_hog.reshape(1,-1)):
                     #print("decision")
                     new_score = clf.decision_function(image_hog.reshape(1,-1))
-                    #print(new_score)
-                    #print("fin")
-                    #results[k] = [top, left]
-                    #k = k + 1
-                    #intersection =  intersect(X, Y, box_width, box_height, left, top, box_width, box_height)
-                    ### Ici il faudrait regarder quand on a plusieurs carrés qui s'intersectent, il y a plus de chances que ce soit un vrai visage
-                    ### Donc il faudrait compter le nombre de carrés, et garder le plus central
-                    if (new_score > 0.4) & (new_score > score):
-                        #print(intersection)
-                        X = left
-                        Y = top    
-                        score = new_score
-                        # k = k+1
-                        #box = image_resize[top:top+49, left:left+box_width]
-                        #scipy.misc.imsave(origin_path+'\\results\\positive'+str(img)+".jpg", box)
+                    if (new_score > 0.1):
+                        x = left
+                        y = top    
+                        
+                        window_x = int(x/ratio)
+                        window_y = int(y/ratio)
+                        window_width = int(box_width/ratio)
+                        window_height = int(box_height/ratio)
+                        find = False
+                        
+                        intersection = 0
+                        
+                        for result in results[:nb_results-1]:
+                            #print(result[0])
+                            if intersection == 0:
+                                intersection = intersect(window_x, window_y, window_width, window_height, int(result[0]), int(result[1]), int(result[2]), int(result[3]))
+                                if (intersection > 80):
+                                    #il s'agit du même visage
+                                    #Faire une vraie fonction de suppression des non-maxima
+                                    if (new_score > result[4]):
+                                        print("Intersection true", intersection)
+                                        result[0] = window_x
+                                        result[1] = window_y
+                                        result[2] = window_width
+                                        result[3] = window_height
+                                        result[4] = new_score   
+                                    
+                        if (intersection == 0):
+                            #Trier le tableau par ordre décroissant de score
+                            k = 0
+                            while (new_score < results[k][4]) & (k < nb_results):
+                                k = k + 1
+                            #if k < nb_results:
+                            results = np.insert(results, k, [window_x, window_y, window_width, window_height, new_score], axis=0)
+                            print(results)
+                            nb_results = nb_results + 1
+                            #else:    
+#                                print ("Intersection false", intersection)
+#                                results[nb_results][0] = window_x
+#                                results[nb_results][1] = window_y
+#                                results[nb_results][2] = window_width
+#                                results[nb_results][3] = window_height
+#                                results[nb_results][4] = new_score
+
+                                
                 left = left + jump
             #print("fin ligne")
             left = 0
             top = top + jump
-            
-    window_x = int(X/ratio)
-    window_y = int(Y/ratio)
-    window_width = int(box_width/ratio)
-    window_height = int(box_height/ratio)
-    
-#            
-    return window_x, window_y, window_width, window_height, new_score
-
+           
+    for result in results[:nb_results]:
+        file = open(origin_path+"\\label_result.txt", "a")
+        file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
+        file.close()
+                   
+    return int(results[0][0]), int(results[0][1]), int(results[0][2]), int(results[0][3]), results[0][4]
 
     
 def detect_face_script():
