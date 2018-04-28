@@ -119,39 +119,43 @@ def load_model(file_name):
      my_clf=pickle.load(open(file_name, "rb"))
      return my_clf
  
-def detect_faces(path):
-    os.chdir(origin_path+path)
-    images = glob.glob("*.jpg")
+def detect_faces(path, box_width, box_height):
+    images = get_images(path)
     
+    # On fait passer la fenêtre glissante sur chaque image
     for img in images:
         image = io.imread(img)
-        num = img.split(".")
-        num = int(num[0])
-        window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, 32, 2)
-        window = image[window_y:window_y+window_height, window_x:window_x+window_width]
-        print(len(image))
-        print(len(image[0]))
-        print(window_x)
-        print(window_y)
-        print(window_width)
-        print(window_height)
-        scipy.misc.imsave(origin_path+'\\results\\positive'+str(num)+".jpg", window)
+        num = get_num(img)
+        sliding_window(image, num, box_width, box_height, 2)
+        
+        #Si l'on veut enregistrer les images
+#       window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, 32, 2)
+#       window = image[window_y:window_y+window_height, window_x:window_x+window_width]
+#       print(len(image))
+#       print(len(image[0]))
+#       print(window_x)
+#       print(window_y)
+#       print(window_width)
+#       print(window_height)
+        #scipy.misc.imsave(origin_path+'\\results\\positive'+str(num)+".jpg", window)
        
 		
 #Prends en entrée une image non modifiée (en couleur)
-def sliding_window(image_orig, num, size, jump):
+def sliding_window(image_orig, num, box_width, box_height, jump):
     
+    #On passe l'image en noir et blanc
     image = color.rgb2gray(image_orig)
+    
     image_width = len(image[0])
     image_height = len(image)
     
-    box_height = size
-    box_width = size
     
     max_size = max(box_height, box_width)
     r = 1
     
     min_length = min(image_width, image_height)
+    
+    #Les résultats seront stockés dans un tableau
     results = np.zeros(shape=(10, 5), dtype = float)   
     nb_results = 0
     
@@ -164,39 +168,46 @@ def sliding_window(image_orig, num, size, jump):
         top = 0
         left = 0
         
+        #Calcul permettant de tester l'image à différentes échelles
         r = r + 0.5
         ratio = (max_size*r)/min_length
-        #Amélioration : ici si on ne trouve pas de visage, il faut essayer avec un autre ratio
         
+        #Redimensionnement de l'image
         image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
        
-
         for i in range(0, (len(image_resize)-box_height)//jump):
             for j in range(0, (len(image_resize[0])-box_width)//jump):
                 
-                #io.imshow(box)
+                #On récupère la box                
                 box = image_resize[top:top+box_height, left:left+box_width]
                 image_hog = feature.hog(box)
-                #clf = svm.LinearSVC(0.01)
+
+                #On teste si la box est un visage
                 if clf.predict(image_hog.reshape(1,-1)):
-                    #print("decision")
+                    
+                    #On calcule la certitude de la fonction de décision
                     new_score = clf.decision_function(image_hog.reshape(1,-1))
+                    
                     if (new_score > 0.1):
+                        #Si le score est suffisant, on garde la fenêre
                         x = left
                         y = top    
                         
+                        #On remet les proportions d'origine
                         window_x = int(x/ratio)
                         window_y = int(y/ratio)
                         window_width = int(box_width/ratio)
                         window_height = int(box_height/ratio)
-                        find = False
+                        #find = False
                         
                         intersection = 0
                         
+                        #Partie en cours, à retravailler
                         for result in results[:nb_results-1]:
                             #print(result[0])
                             if intersection == 0:
                                 intersection = intersect(window_x, window_y, window_width, window_height, int(result[0]), int(result[1]), int(result[2]), int(result[3]))
+                                #Ici il faut faire une fonction de non-maxima (cette partie de code n'est pas encore au point)
                                 if (intersection > 80):
                                     #il s'agit du même visage
                                     #Faire une vraie fonction de suppression des non-maxima
@@ -231,15 +242,16 @@ def sliding_window(image_orig, num, size, jump):
             left = 0
             top = top + jump
            
+    #On enregistre les résultats dans un fichier
     for result in results[:nb_results]:
         file = open(origin_path+"\\label_result.txt", "a")
         file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
         file.close()
                    
-    return int(results[0][0]), int(results[0][1]), int(results[0][2]), int(results[0][3]), results[0][4]
+    return results
 
     
-def detect_face_script():
-    clf = load_model(origin_path+"save_model_001.p")
-    return detect_faces("\\test")
+def detect_face_script(file, path, box_width, box_height):
+    clf = load_model(origin_path+"\\"+file)
+    return detect_faces(path, box_width, box_height)
 
