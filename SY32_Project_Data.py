@@ -118,10 +118,10 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
 #Selectionne des images négatives à partir des labels
 # Limit désigne le seuil d'intersection avec le label positif acceptable (0 = pas d'intersection)
 # Jump désigne le pas de déplacement de la fenêtre glissante
-def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, label_y, label_width, label_height):
+def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height):
 
     # Tableau qui va contenir les images à sauvegarder
-    fd_hog = np.zeros(shape=(7, 324), dtype=float)
+    fd_hog = np.zeros(shape=(number, 324), dtype=float)
     
     max_size = max(box_height, box_width)
     r = 0
@@ -132,7 +132,7 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
     min_length = min(image_width, image_height)
     
     n=0
-    while (n < 7):
+    while (n < number):
         
         #On redimensionne l'image en fonction du ratio (pour avoir des images négatives à différentes
         # échelles )
@@ -143,7 +143,6 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
         
         image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
         
-        #results = np.zeros(shape=((height//jump)*(width//jump), 3), dtype = int)
         for i in range(0, (len(image_resize)-box_height)//jump):
             for j in range(0, (len(image_resize[0])-box_width)//jump):
                 
@@ -157,7 +156,7 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
                 intersection = intersect(window_x, window_y, window_width, window_height, label_x, label_y, label_width, label_height)
                 #print(intersection)
                 
-                if ((intersection < limit) & (n < 7)):
+                if ((intersection < limit) & (n < number)):
                     
                     box = image_resize[top:top+box_height, left:left+box_width]
                     scipy.misc.imsave(origin_path+'\\neg\\negative'+str(num)+'-'+str(n)+".jpg", box)
@@ -175,18 +174,18 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
 def get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height):
      box = image[label_y:label_y+label_height, label_x:label_x+label_width]
      box = resize(box, (box_height, box_width))
-     #scipy.misc.imsave(origin_path+'\\label\\box'+str(num)+'.jpg', box) 
+     scipy.misc.imsave(origin_path+'\\label\\box'+str(num)+'.jpg', box) 
      fd_hog = feature.hog(box)
      
      return fd_hog
-    
-def generate_train_data(path, box_width, box_height, jump, limit):
+ 
+
+def generate_train_data(path, box_width, box_height, jump, limit, number):
     
     labels = get_labels()
     images = get_images(path)
-    
-    p=0 #index du tableau des images positives
-    n=0 #index du tableau des images négatives
+    p = 0 #index du tableau des images positives
+    n = 0 #index du tableau des images négatives
     fd_hog_pos = np.zeros(shape=(len(images), 324), dtype=float)
     fd_hog_neg = np.zeros(shape=(0, 324), dtype=float)
     for img in images:
@@ -205,17 +204,15 @@ def generate_train_data(path, box_width, box_height, jump, limit):
         # On récupère les box positives, on calcule le hog que l'on sauvegarde dans un tableau, et on sauvegarde aussi les images
         fd_hog_pos[p] = get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height)
         p = p + 1
-        
 
         # On recherche des images négatives avec une fenêtre glissante dont la taille est adaptée à la taille de l'image
-        fd_hog = np.zeros(shape=(7, 324), dtype=float)
+        fd_hog = np.zeros(shape=(number, 324), dtype=float)
         
-        fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, label_y, label_width, label_height)
+        fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height)
         fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)
         n = n + 1
         
     return fd_hog_pos, fd_hog_neg
-
 
 #fd_hog_pos32, fd_hog_neg32 = generate_train_data("\\train", 32, 32, 10, 10)
 

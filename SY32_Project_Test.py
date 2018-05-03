@@ -70,12 +70,6 @@ def validation_script(pos, neg):
     error, prec, rap, score = cross_validation(train_s, label_s, 5)   
     return error, prec, rap, score
 
-def cross_validation_script(c):
-    clf = svm.LinearSVC(C=c)
-    fd_hog_pos = compute_hog("\\label") 
-    fd_hog_neg = compute_hog("\\neg") 
-    return validation_script(fd_hog_pos, fd_hog_neg)
-
 
 ######
 #Test de la fenêtre glissante

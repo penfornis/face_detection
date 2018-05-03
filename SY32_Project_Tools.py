@@ -95,17 +95,17 @@ def load_model(file_name):
      my_clf=pickle.load(open(file_name, "rb"))
      return my_clf
  
-def detect_faces(clf, path, box_width, box_height, jump):
+def detect_faces(clf, path, box_width, box_height, min_score, jump):
     images = get_images(path)
     
     # On fait passer la fenêtre glissante sur chaque image
     for img in images:
         image = io.imread(img)
         num = get_num(img)
-        sliding_window(clf, image, num, box_width, box_height, jump)
+        sliding_window(clf, image, num, box_width, box_height, min_score, jump)
 		
 #Prends en entrée une image non modifiée (en couleur)
-def sliding_window(clf, image_orig, num, box_width, box_height, jump):
+def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump):
     
     #On passe l'image en noir et blanc
     image = color.rgb2gray(image_orig)
@@ -152,7 +152,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, jump):
                     #On calcule la certitude de la fonction de décision
                     new_score = clf.decision_function(image_hog.reshape(1,-1))
                     
-                    if (new_score > 0.2):
+                    if (new_score > min_score):
                         #Si le score est suffisant, on garde la fenêre
                         x = left
                         y = top    
@@ -185,17 +185,20 @@ def sliding_window(clf, image_orig, num, box_width, box_height, jump):
     k = 0
     for result in results[:nb_results+1]:
         k = k +1
-        window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
-        scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
+        #window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
+        #scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
         file = open(origin_path+"\\label_result.txt", "a")
         file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
         file.close()
+    #file = open(origin_path+"\\label_result.txt", "a")
+    #file.write(str(num)+" "+str(int(results[0][0]))+" "+str(int(results[0][1]))+" "+str(int(results[0][2]))+" "+str(int(results[0][3]))+" "+str(results[0][4])+"\n")
+    #file.close()
                    
     return results
 
     
-def detect_face_script(clf, path, box_width, box_height, jump):
-    return detect_faces(clf, path, box_width, box_height, jump)
+def detect_face_script(clf, path, box_width, box_height, min_score, jump):
+    return detect_faces(clf, path, box_width, box_height, min_score, jump)
 
 def non_maxima(results, nb_results): 
     i = nb_results #dernier index
