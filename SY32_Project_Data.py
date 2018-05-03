@@ -44,59 +44,6 @@ import scipy.misc
 origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
 ########
 
-
-def get_box_positives(path):
-    os.chdir(origin_path)
-    labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
-    os.chdir(origin_path+path)
-    images = glob.glob("*.jpg")
-    
-    box_heigth = 200
-    box_width = 200
-    fd_hog = np.zeros(shape=(len(images), 42849), dtype=float)
-    image_hog = np.zeros(shape=(len(images),box_heigth,box_width), dtype=float)
-
-    j = 0
-    for i in images:
-        image = []
-        box = []
-        
-        top = labels[j]["y"]
-        left = labels[j]["x"]
-        width = labels[j]["width"]
-        height = labels[j]["height"]
-        
-        image = io.imread(i)
-        image_grey = color_to_grey(image)
-        
-        max_length = max(width, height)
-        ratio = box_width / max_length
-        
-        
-        image_resize = resize(image, (int(len(image[0])*ratio), int(len(image)*ratio)))
-    
-        
-        box = image_grey[top:top+height, left:left+width]
-        
-        scipy.misc.imsave('outfile.jpg', box)
-        print(str(j) + " " + str(top) + " " + str(left) + " " +str(width) + " " +str(height))
-        
-        box_resize = resize(box, (box_heigth, box_width))
-        
-        fd_hog[j], image_hog[j] = feature.hog(box_resize, visualise=True)
-        print(len(fd_hog))
-        
-        if(False):
-            plt.imshow(image_hog[j])
-            plt.show()
-            plt.imshow(image)
-            plt.show()
-            plt.imshow(box_resize)
-            plt.show()
-        #time.sleep(5)
-        j = j+1
-    return fd_hog,image_hog
-
 #Renvoie le numéro d'une image
 def get_num(img):
     num = img.split(".")
@@ -185,8 +132,6 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
     min_length = min(image_width, image_height)
     
     n=0
-    #p=0
-    # if ((width != 0) & (height != 0)):
     while (n < 7):
         
         #On redimensionne l'image en fonction du ratio (pour avoir des images négatives à différentes
@@ -261,13 +206,6 @@ def generate_train_data(path, box_width, box_height, jump, limit):
         fd_hog_pos[p] = get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height)
         p = p + 1
         
-         
-#        image_width = len(image[0])
-#        image_height = len(image)
-#     
-#        max_length = max(label_width, label_height)
-#        size = min(box_width, box_height)
-#        ratio = size / max_length
 
         # On recherche des images négatives avec une fenêtre glissante dont la taille est adaptée à la taille de l'image
         fd_hog = np.zeros(shape=(7, 324), dtype=float)

@@ -37,8 +37,6 @@ def scoreF1(prediction, truth):
     r = rappel(prediction, truth)
     return 2*(p*r)/(p+r)
 
-
-#def curb():
     
 ######
 #Test du modèle de classifieur
@@ -78,16 +76,12 @@ def cross_validation_script(c):
     fd_hog_neg = compute_hog("\\neg") 
     return validation_script(fd_hog_pos, fd_hog_neg)
 
-#error, rappel, precision, score = validation_script(fd_hog_pos, fd_hog_neg)
-
-
 
 ######
 #Test de la fenêtre glissante
 ######
 
 def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_height):
-        #x = np.reshape(x, (len(x), 24*24))
     print("début cross validation")
     r = np.zeros(N, dtype = float)
     fd_neg = np.zeros(shape=(len(images), 324), dtype=float)
@@ -156,10 +150,6 @@ def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_heig
         r[i] = np.mean(predict != 1) 
        
     error = np.mean(r)*100
-#    error = 0
-#    for i in range(0,N):
-#        error += r[i]
-#    error = error * 100 / N
     return fd_neg[:nb_fd], error, n
 
 def validation_sliding_window_script(path, pos, neg, box_width, box_height): 

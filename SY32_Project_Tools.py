@@ -54,9 +54,6 @@ def compute_hog(path):
     images = glob.glob("*.jpg")
     
     j = 0
-    #fd_hog = np.zeros(shape=(len(images), 6804), dtype=float)
-	#image_hog = np.zeros(shape=(len(images), len(io.imread(images[0])), len(io.imread(images[0])[0])), dtype=float)
-
     fd_hog = np.zeros(shape=(len(images), 324), dtype=float)
     image_hog = np.zeros(shape=(len(images), 32, 32), dtype=float)
     
@@ -78,8 +75,6 @@ def show_mean(path):
     plt.show(mean_display)
 
 
-
-
 def label_concat(pos, neg):
     train = np.concatenate((pos, neg), axis=0)
     label = np.zeros(len(pos)+len(neg), dtype = int)
@@ -91,25 +86,6 @@ def label_concat(pos, neg):
         label[i] = 0
         
     return train, label
-    
- 
-    
-#    pos_test = read_img_float("test\\pos")
-#    neg_test = read_img_float("test\\neg")
-#    
-#    test = np.concatenate((pos_test, neg_test), axis=0)
-#    test = np.reshape(test, (len(test), 24*24))
-#    
-#    
-#    label_test = np.zeros(len(pos_test)+len(neg_test), dtype = int)
-#    for i in range(0, len(pos_test)):
-#        label_test[i] = 1
-#    
-#    for i in range(len(pos_test), len(neg_test)):
-#        label_test[i] = 0
-#    
-#    test = np.mean(clf.predict(test) != label_test)
-#    return model
     
     
 def save_model(clf, file_name):
@@ -127,18 +103,6 @@ def detect_faces(clf, path, box_width, box_height, jump):
         image = io.imread(img)
         num = get_num(img)
         sliding_window(clf, image, num, box_width, box_height, jump)
-        
-        #Si l'on veut enregistrer les images
-#       window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, 32, 2)
-#       window = image[window_y:window_y+window_height, window_x:window_x+window_width]
-#       print(len(image))
-#       print(len(image[0]))
-#       print(window_x)
-#       print(window_y)
-#       print(window_width)
-#       print(window_height)
-        #scipy.misc.imsave(origin_path+'\\results\\positive'+str(num)+".jpg", window)
-       
 		
 #Prends en entrée une image non modifiée (en couleur)
 def sliding_window(clf, image_orig, num, box_width, box_height, jump):
@@ -199,8 +163,6 @@ def sliding_window(clf, image_orig, num, box_width, box_height, jump):
                         window_width = int(box_width/ratio)
                         window_height = int(box_height/ratio)
                         
-                        #results, nb_results, end = non_maxima_sequ(window_x, window_y, window_width, window_height, new_score, results, nb_results)
-
                         #Trier le tableau par ordre décroissant de score
                         k = 0
                         while (k < nb_results) & (new_score < results[k][4]):
@@ -209,24 +171,15 @@ def sliding_window(clf, image_orig, num, box_width, box_height, jump):
                         results = np.insert(results, k, [window_x, window_y, window_width, window_height, new_score], axis=0)
                         #print(results)
                         nb_results = nb_results + 1
-                            #else:    
-#                                print ("Intersection false", intersection)
-#                                results[nb_results][0] = window_x
-#                                results[nb_results][1] = window_y
-#                                results[nb_results][2] = window_width
-#                                results[nb_results][3] = window_height
-#                                results[nb_results][4] = new_score
 
                                 
                 left = left + jump
             #print("fin ligne")
             left = 0
             top = top + jump
-    #print(results)
             
     results, nb_results = non_maxima(results, nb_results-1)
-    
-    #print(results)
+
            
     #On enregistre les résultats dans un fichier
     k = 0
@@ -237,9 +190,6 @@ def sliding_window(clf, image_orig, num, box_width, box_height, jump):
         file = open(origin_path+"\\label_result.txt", "a")
         file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
         file.close()
-#    file = open(origin_path+"\\label_result.txt", "a")
-#    file.write(str(num)+" "+str(int(results[0][0]))+" "+str(int(results[0][1]))+" "+str(int(results[0][2]))+" "+str(int(results[0][3]))+" "+str(results[0][4])+"\n")
-#    file.close()
                    
     return results
 
@@ -267,44 +217,3 @@ def non_maxima(results, nb_results):
         i= i-1
     
     return results, nb_results
-
-def non_maxima_sequ(x, y, w, h, score, results, nb_results):
-    end = 0
-    j = 0
-    while (j <= (nb_results-1)) & (end == 0):
-        intersection = intersect(x, y, w, h, results[j][0], results[j][1], results[j][2], results[j][3])
-        if (intersection > 0):
-            if (score > results[j][4]):
-                print("Resultat", results)
-                results = np.delete(results, j, axis=0)
-                print("Resultat supprimé", results)
-                nb_results = nb_results - 1
-            else:
-                end = 1
-        else:
-            j = j+1
-    return results, nb_results, end
-    
-
-#def non_maxima(results, nb_results):
-#    for  in results[:nb_results-1]:
-#    #print(result[0])
-#
-#        intersection = intersect(window_x, window_y, window_width, window_height, int(result[0]), int(result[1]), int(result[2]), int(result[3]))
-#        #Ici il faut faire une fonction de non-maxima (cette partie de code n'est pas encore au point)
-#        if (intersection > 50):
-#            #il s'agit du même visage
-#            #Faire une vraie fonction de suppression des non-maxima
-#            if find == False:
-#                if (new_score > result[4]):
-#                    print("Intersection true", intersection)
-#                    result[0] = window_x
-#                    result[1] = window_y
-#                    result[2] = window_width
-#                    result[3] = window_height
-#                    result[4] = new_score 
-#                    find == True
-#                else:
-#                    break
-#            else:
-#                np.delete(results, np.where(result), axis=0)
