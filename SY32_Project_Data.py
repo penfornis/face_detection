@@ -43,6 +43,7 @@ import scipy.misc
 
 origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
 ########
+hog = 648
 
 #Renvoie le numéro d'une image
 def get_num(img):
@@ -121,7 +122,7 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
 def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height):
 
     # Tableau qui va contenir les images à sauvegarder
-    fd_hog = np.zeros(shape=(number, 324), dtype=float)
+    fd_hog = np.zeros(shape=(number, hog), dtype=float)
     
     max_size = max(box_height, box_width)
     r = 0
@@ -186,8 +187,8 @@ def generate_train_data(path, box_width, box_height, jump, limit, number):
     images = get_images(path)
     p = 0 #index du tableau des images positives
     n = 0 #index du tableau des images négatives
-    fd_hog_pos = np.zeros(shape=(len(images), 324), dtype=float)
-    fd_hog_neg = np.zeros(shape=(0, 324), dtype=float)
+    fd_hog_pos = np.zeros(shape=(len(images), hog), dtype=float)
+    fd_hog_neg = np.zeros(shape=(0, hog), dtype=float)
     for img in images:
         
         image = io.imread(img)
@@ -206,7 +207,7 @@ def generate_train_data(path, box_width, box_height, jump, limit, number):
         p = p + 1
 
         # On recherche des images négatives avec une fenêtre glissante dont la taille est adaptée à la taille de l'image
-        fd_hog = np.zeros(shape=(number, 324), dtype=float)
+        fd_hog = np.zeros(shape=(number, hog), dtype=float)
         
         fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height)
         fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)
@@ -216,5 +217,5 @@ def generate_train_data(path, box_width, box_height, jump, limit, number):
 
 #fd_hog_pos32, fd_hog_neg32 = generate_train_data("\\train", 32, 32, 10, 10)
 
-#32*32 => 324
+#32*32 => hog
 #32*49 => 648

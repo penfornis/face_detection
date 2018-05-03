@@ -12,7 +12,7 @@ import SY32_Project_Data as data
 origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
 clf = svm.LinearSVC()
 box_width = 32
-box_height = 32
+box_height = 49
 
 min_score = 0.1
 
@@ -26,22 +26,22 @@ negative_nb = 7
 #print("*** Génération des données ***")
 
 #Générer les images d'entraînement
-#fd_hog_pos, fd_hog_neg = data.generate_train_data("\\train", box_width, box_width, train_step, train_limit, negative_nb)
+fd_hog_pos49, fd_hog_neg49 = data.generate_train_data("\\train", box_width, box_height, train_step, train_limit, negative_nb)
 
 print("*** Evaluation du modèle ***")
 ###Calculer l'efficacité du modèle
-#error, rappel, precision, score = validation_script(fd_hog_pos, fd_hog_neg)
+error, rappel, precision, score = validation_script(fd_hog_pos49, fd_hog_neg49)
 #print("valeurs:", error, precision, score, rappel)
 
 print("*** Préparation des données ***")
-#fd_hog, label_hog = label_concat(fd_hog_pos, fd_hog_neg)
+fd_hog, label_hog = label_concat(fd_hog_pos49, fd_hog_neg49)
 ##
 
 print("*** Génération du modèle ***")
-#clf.fit(fd_hog, label_hog)
+clf.fit(fd_hog, label_hog)
 ##print("*** model OK ***")
 print("*** Sauvegarde du modèle ***")
-#s = pickle.dump(clf, open (origin_path+"\\save_model.p", "wb"))
+s = pickle.dump(clf, open (origin_path+"\\save_model.p", "wb"))
 clf = pickle.load(open(origin_path+"\\save_model.p", "rb"))
 
 print("*** Génération des résultats ***")

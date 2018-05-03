@@ -29,6 +29,7 @@ clf = svm.LinearSVC()
 #origin_path = "C:\\Users\\sy32p009\\Documents\\SY32_PART2\\TD 02 - Classification dimages-20180409\\imageface\\imageface\\"
 origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
 
+hog = 648
 def read_img_float(path):
     os.chdir(origin_path+path)
     images = glob.glob("*.jpg")
@@ -185,14 +186,14 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     k = 0
     for result in results[:nb_results+1]:
         k = k +1
-        #window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
-        #scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
-        file = open(origin_path+"\\label_result.txt", "a")
-        file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
-        file.close()
-    #file = open(origin_path+"\\label_result.txt", "a")
-    #file.write(str(num)+" "+str(int(results[0][0]))+" "+str(int(results[0][1]))+" "+str(int(results[0][2]))+" "+str(int(results[0][3]))+" "+str(results[0][4])+"\n")
-    #file.close()
+        window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
+        scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
+        #file = open(origin_path+"\\label_result.txt", "a")
+        #file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
+        #file.close()
+    file = open(origin_path+"\\label_result.txt", "a")
+    file.write(str(num)+" "+str(int(results[0][0]))+" "+str(int(results[0][1]))+" "+str(int(results[0][2]))+" "+str(int(results[0][3]))+" "+str(results[0][4])+"\n")
+    file.close()
                    
     return results
 
