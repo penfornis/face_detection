@@ -119,14 +119,14 @@ def load_model(file_name):
      my_clf=pickle.load(open(file_name, "rb"))
      return my_clf
  
-def detect_faces(path, box_width, box_height):
+def detect_faces(clf, path, box_width, box_height, jump):
     images = get_images(path)
     
     # On fait passer la fenêtre glissante sur chaque image
     for img in images:
         image = io.imread(img)
         num = get_num(img)
-        sliding_window(image, num, box_width, box_height, 2)
+        sliding_window(clf, image, num, box_width, box_height, jump)
         
         #Si l'on veut enregistrer les images
 #       window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, 32, 2)
@@ -141,7 +141,7 @@ def detect_faces(path, box_width, box_height):
        
 		
 #Prends en entrée une image non modifiée (en couleur)
-def sliding_window(image_orig, num, box_width, box_height, jump):
+def sliding_window(clf, image_orig, num, box_width, box_height, jump):
     
     #On passe l'image en noir et blanc
     image = color.rgb2gray(image_orig)
@@ -151,12 +151,12 @@ def sliding_window(image_orig, num, box_width, box_height, jump):
     
     
     max_size = max(box_height, box_width)
-    r = 1
+    r = 0.6
     
     min_length = min(image_width, image_height)
     
     #Les résultats seront stockés dans un tableau
-    results = np.zeros(shape=(10, 5), dtype = float)   
+    results = np.zeros(shape=(1, 5), dtype = float)   
     nb_results = 0
     
     x = -100
@@ -169,7 +169,7 @@ def sliding_window(image_orig, num, box_width, box_height, jump):
         left = 0
         
         #Calcul permettant de tester l'image à différentes échelles
-        r = r + 0.5
+        r = r + 0.4
         ratio = (max_size*r)/min_length
         
         #Redimensionnement de l'image
@@ -188,7 +188,7 @@ def sliding_window(image_orig, num, box_width, box_height, jump):
                     #On calcule la certitude de la fonction de décision
                     new_score = clf.decision_function(image_hog.reshape(1,-1))
                     
-                    if (new_score > 0.1):
+                    if (new_score > 0.2):
                         #Si le score est suffisant, on garde la fenêre
                         x = left
                         y = top    
@@ -198,36 +198,17 @@ def sliding_window(image_orig, num, box_width, box_height, jump):
                         window_y = int(y/ratio)
                         window_width = int(box_width/ratio)
                         window_height = int(box_height/ratio)
-                        #find = False
                         
-                        intersection = 0
-                        
-                        #Partie en cours, à retravailler
-                        for result in results[:nb_results-1]:
-                            #print(result[0])
-                            if intersection == 0:
-                                intersection = intersect(window_x, window_y, window_width, window_height, int(result[0]), int(result[1]), int(result[2]), int(result[3]))
-                                #Ici il faut faire une fonction de non-maxima (cette partie de code n'est pas encore au point)
-                                if (intersection > 80):
-                                    #il s'agit du même visage
-                                    #Faire une vraie fonction de suppression des non-maxima
-                                    if (new_score > result[4]):
-                                        print("Intersection true", intersection)
-                                        result[0] = window_x
-                                        result[1] = window_y
-                                        result[2] = window_width
-                                        result[3] = window_height
-                                        result[4] = new_score   
-                                    
-                        if (intersection == 0):
-                            #Trier le tableau par ordre décroissant de score
-                            k = 0
-                            while (new_score < results[k][4]) & (k < nb_results):
-                                k = k + 1
-                            #if k < nb_results:
-                            results = np.insert(results, k, [window_x, window_y, window_width, window_height, new_score], axis=0)
-                            print(results)
-                            nb_results = nb_results + 1
+                        #results, nb_results, end = non_maxima_sequ(window_x, window_y, window_width, window_height, new_score, results, nb_results)
+
+                        #Trier le tableau par ordre décroissant de score
+                        k = 0
+                        while (k < nb_results) & (new_score < results[k][4]):
+                            k = k + 1
+                        #if k < nb_results:
+                        results = np.insert(results, k, [window_x, window_y, window_width, window_height, new_score], axis=0)
+                        #print(results)
+                        nb_results = nb_results + 1
                             #else:    
 #                                print ("Intersection false", intersection)
 #                                results[nb_results][0] = window_x
@@ -241,17 +222,89 @@ def sliding_window(image_orig, num, box_width, box_height, jump):
             #print("fin ligne")
             left = 0
             top = top + jump
+    #print(results)
+            
+    results, nb_results = non_maxima(results, nb_results-1)
+    
+    #print(results)
            
     #On enregistre les résultats dans un fichier
-    for result in results[:nb_results]:
+    k = 0
+    for result in results[:nb_results+1]:
+        k = k +1
+        window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
+        scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
         file = open(origin_path+"\\label_result.txt", "a")
         file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
         file.close()
+#    file = open(origin_path+"\\label_result.txt", "a")
+#    file.write(str(num)+" "+str(int(results[0][0]))+" "+str(int(results[0][1]))+" "+str(int(results[0][2]))+" "+str(int(results[0][3]))+" "+str(results[0][4])+"\n")
+#    file.close()
                    
     return results
 
     
-def detect_face_script(file, path, box_width, box_height):
-    clf = load_model(origin_path+"\\"+file)
-    return detect_faces(path, box_width, box_height)
+def detect_face_script(clf, path, box_width, box_height, jump):
+    return detect_faces(clf, path, box_width, box_height, jump)
 
+def non_maxima(results, nb_results): 
+    i = nb_results #dernier index
+    
+    #print("i", i)
+    #print("results", results)
+    while i >= 0:
+        j = i-1  
+        continu = 1
+        while (j >= 0) & (continu == 1):
+            intersection = intersect(results[i][0], results[i][1], results[i][2], results[i][3], results[j][0], results[j][1], results[j][2], results[j][3])
+            if intersection > 0:
+                #print("Resultat", results)
+                results = np.delete(results, i, axis=0)
+                print("Resultat supprimé")
+                nb_results = nb_results - 1
+                continu = 0
+            j = j-1
+        i= i-1
+    
+    return results, nb_results
+
+def non_maxima_sequ(x, y, w, h, score, results, nb_results):
+    end = 0
+    j = 0
+    while (j <= (nb_results-1)) & (end == 0):
+        intersection = intersect(x, y, w, h, results[j][0], results[j][1], results[j][2], results[j][3])
+        if (intersection > 0):
+            if (score > results[j][4]):
+                print("Resultat", results)
+                results = np.delete(results, j, axis=0)
+                print("Resultat supprimé", results)
+                nb_results = nb_results - 1
+            else:
+                end = 1
+        else:
+            j = j+1
+    return results, nb_results, end
+    
+
+#def non_maxima(results, nb_results):
+#    for  in results[:nb_results-1]:
+#    #print(result[0])
+#
+#        intersection = intersect(window_x, window_y, window_width, window_height, int(result[0]), int(result[1]), int(result[2]), int(result[3]))
+#        #Ici il faut faire une fonction de non-maxima (cette partie de code n'est pas encore au point)
+#        if (intersection > 50):
+#            #il s'agit du même visage
+#            #Faire une vraie fonction de suppression des non-maxima
+#            if find == False:
+#                if (new_score > result[4]):
+#                    print("Intersection true", intersection)
+#                    result[0] = window_x
+#                    result[1] = window_y
+#                    result[2] = window_width
+#                    result[3] = window_height
+#                    result[4] = new_score 
+#                    find == True
+#                else:
+#                    break
+#            else:
+#                np.delete(results, np.where(result), axis=0)

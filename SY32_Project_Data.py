@@ -141,10 +141,17 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
     #Calcul des coordonnées de la box d'intersection
     x3 = max(x1, x2)
     y3 = max(y1, y2)
+    
+    #print(x3)
+    #print(y3)
 
     #Calcul de la largeur et de la hauteur de la box
     x4 = min(x1+w1, x2+w2)
     y4 = min(y1+h1, y2+h2)
+    
+    #print(x4)
+    #print(y4)
+
     
     if ((x3 >= x4) | (y3 >= y4)):
         #Pas d'intersection
@@ -155,10 +162,10 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
         inter = abs(x4 - x3) * abs(y4 - y3)
         #Calcul de l'aire de l'union des deux boxes
         union = w1 * h1 + w2 * h2 - inter
-		
+    		
         #Calcul du pourcentage d'intersection
         ratio = (float(inter)/float(union))*100
-	
+    	
         return ratio
 
 #Selectionne des images négatives à partir des labels
@@ -167,10 +174,10 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
 def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, label_y, label_width, label_height):
 
     # Tableau qui va contenir les images à sauvegarder
-    fd_hog = np.zeros(shape=(5, 324), dtype=float)
+    fd_hog = np.zeros(shape=(7, 324), dtype=float)
     
     max_size = max(box_height, box_width)
-    r = 1
+    r = 0
     
     image_width = len(image[0])
     image_height = len(image)
@@ -180,13 +187,13 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
     n=0
     #p=0
     # if ((width != 0) & (height != 0)):
-    while (n < 5):
+    while (n < 7):
         
         #On redimensionne l'image en fonction du ratio (pour avoir des images négatives à différentes
         # échelles )
         left = 0
         top = 0
-        r = r + 0.5
+        r = r + 1
         ratio = (max_size*r)/min_length
         
         image_resize = resize(image, (int(image_height*ratio), int(image_width*ratio)))
@@ -203,12 +210,12 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, 
                         
                 #On calcule l'intersection entre la fenêtre glissante et le label
                 intersection = intersect(window_x, window_y, window_width, window_height, label_x, label_y, label_width, label_height)
-                print(intersection)
+                #print(intersection)
                 
-                if ((intersection < limit) & (n < 5)):
+                if ((intersection < limit) & (n < 7)):
                     
                     box = image_resize[top:top+box_height, left:left+box_width]
-                    #scipy.misc.imsave(origin_path+'\\neg\\negative'+str(num)+'-'+str(n)+".jpg", box)
+                    scipy.misc.imsave(origin_path+'\\neg\\negative'+str(num)+'-'+str(n)+".jpg", box)
                     fd_hog[n] = feature.hog(box)
                     n = n + 1
                 left = left + jump
@@ -263,7 +270,7 @@ def generate_train_data(path, box_width, box_height, jump, limit):
 #        ratio = size / max_length
 
         # On recherche des images négatives avec une fenêtre glissante dont la taille est adaptée à la taille de l'image
-        fd_hog = np.zeros(shape=(5, 324), dtype=float)
+        fd_hog = np.zeros(shape=(7, 324), dtype=float)
         
         fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, label_x, label_y, label_width, label_height)
         fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)

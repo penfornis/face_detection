@@ -13,7 +13,7 @@ def precision(prediction, truth):
     vp = 0
     fp = 0
     for i in range(0, len(prediction)):
-        if prediction[i] == truth[i]:
+        if (prediction[i] == 1) & (truth[i] == 1):
             vp = vp + 1
         else:
             if (prediction[i] == 1) & (truth[i] == 0):
@@ -25,7 +25,7 @@ def rappel(prediction, truth):
     vp = 0
     fn = 0
     for i in range(0, len(prediction)):
-        if prediction[i] == truth[i]:
+        if (prediction[i] == 1) & (truth[i] == 1):
             vp = vp + 1
         else:
             if (prediction[i] == 0) & (truth[i] == 1):
@@ -90,7 +90,9 @@ def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_heig
         #x = np.reshape(x, (len(x), 24*24))
     print("début cross validation")
     r = np.zeros(N, dtype = float)
+    fd_neg = np.zeros(shape=(len(images), 324), dtype=float)
     n=0
+    nb_fd = 0
     predict = np.zeros(len(images)//5, dtype = float)
     
     for i in range(0,N):
@@ -121,7 +123,12 @@ def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_heig
             print(num)
             
             #On fait passer la fenêtre glissante
-            window_x, window_y, window_width, window_height, window_score = sliding_window(image, num, box_width, box_height, 2)
+            results = sliding_window(clf, image, num, box_width, box_height, 3)
+            
+            window_x = int(results[0][0])
+            window_y = int(results[0][1])
+            window_width = int(results[0][2])
+            window_height = int(results[0][3])
             
             #On calcule l'intersection entre la box trouvée grâce au model et la vraie box
             intersection = intersect(window_x, window_y, window_width, window_height, label_x, label_y, label_width, label_height)
@@ -131,17 +138,20 @@ def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_heig
                 predict[j] = 1
                 n=n+1
                 #On peut enregistrer l'image
-                #window = image[window_y:window_y+window_height, window_x:window_x+window_width]
-                #scipy.misc.imsave(origin_path+'\\results\\positive'+str(num)+".jpg", window)
+                window = image[window_y:window_y+window_height, window_x:window_x+window_width]
+                scipy.misc.imsave(origin_path+'\\results\\positive'+str(num)+".jpg", window)
                 
             else:
                 predict[j] = 0
                
                 #on peut enregistrer l'image
-                #window = image[window_y:window_y+window_height, window_x:window_x+window_width]
-                #window = color.rgb2gray(window)
-                #window = resize(window, (box_height, box_width))
-                #scipy.misc.imsave(origin_path+'\\neg2\\neg2'+str(num)+".jpg", window)
+                window = image[window_y:window_y+window_height, window_x:window_x+window_width]
+                window = color.rgb2gray(window)
+                window = resize(window, (box_height, box_width))
+                
+                fd_neg[nb_fd] =  feature.hog(window)
+                nb_fd = nb_fd + 1
+                scipy.misc.imsave(origin_path+'\\neg2\\neg2'+str(num)+".jpg", window)
             j = j+1
         r[i] = np.mean(predict != 1) 
        
@@ -150,13 +160,13 @@ def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_heig
 #    for i in range(0,N):
 #        error += r[i]
 #    error = error * 100 / N
-    return error, n
+    return fd_neg[:nb_fd], error, n
 
 def validation_sliding_window_script(path, pos, neg, box_width, box_height): 
     labels = get_labels()
     images = get_images(path)
     train, label = label_concat(pos,neg)
-   # train, label = shuffle(train,label)
+    train, label = shuffle(train,label)
     return cross_validation_sliding_window(images, labels, train, label, 5, box_width, box_height)  
 
 #error, n = validation_sliding_window_script("\\train", fd_hog_label, fd_hog_neg)
