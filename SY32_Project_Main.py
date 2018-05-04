@@ -16,7 +16,7 @@ clf = svm.LinearSVC()
 box_width = 32
 box_height = 49
 
-min_score = 0.5
+min_score = 0.1
 
 train_step = 10
 train_limit = 25
@@ -29,7 +29,7 @@ print("*** Génération des données ***")
 
 #Générer les images d'entraînement
 
-fd_hog_pos, fd_hog_neg = data.generate_train_data("\\train", box_width, box_height, train_step, train_limit, negative_nb)
+#fd_hog_pos, fd_hog_neg = data.generate_train_data("\\train", box_width, box_height, train_step, train_limit, negative_nb)
 #
 print("*** Evaluation du modèle ***")
 ####Calculer l'efficacité du modèle
@@ -48,7 +48,7 @@ s = pickle.dump(clf, open (origin_path+"\\save_model.p", "wb"))
 clf = pickle.load(open(origin_path+"\\save_model.p", "rb"))
 #
 print("*** Génération des résultats ***")
-results = detect_face_script(clf, "\\test", box_width, box_height, min_score, 1)
+results = detect_face_script(clf, "\\test", box_width, box_height, min_score, 3)
 
 
 #error_script, n = validation_sliding_window_script("\\train", 5, box_width, box_height)

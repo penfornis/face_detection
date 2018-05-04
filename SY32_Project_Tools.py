@@ -49,22 +49,6 @@ def get_resize_bw_image(name, box_width, box_height):
     image = color_to_grey(image)
     resize(image, (box_height, box_width))
     return image
-
-def compute_hog(path):
-    os.chdir(origin_path+path)
-    images = glob.glob("*.jpg")
-    
-    j = 0
-    fd_hog = np.zeros(shape=(len(images), 324), dtype=float)
-    image_hog = np.zeros(shape=(len(images), 32, 32), dtype=float)
-    
-    for i in images:
-        image = get_resize_bw_image(i, 32, 32)
-        #image.resize(32,32)
-        fd_hog[j], image_hog[j] = feature.hog(image, visualise=True)
-        j = j+1
-    
-    return fd_hog
     
     
 def show_mean(path):
@@ -110,6 +94,8 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On passe l'image en noir et blanc
     image = color_to_grey(image_orig)
+    scipy.misc.imsave(origin_path+'\\test_color\\'+str(num)+'.jpg', image)
+        
     
     image_width = len(image[0])
     image_height = len(image)
@@ -129,7 +115,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On itère jusqu'à trouver un visage en changeant la taille de l'image d'origine
     #On pourrait comparer plusieurs tailles d'image
-    while (x == -100 or r < 2):
+    while (x == -100 and r < 3):
         top = 0
         left = 0
         
