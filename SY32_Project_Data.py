@@ -42,8 +42,8 @@ import glob
 
 import scipy.misc
 
-#origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
-origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
+origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
+#origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
 
 
 ########
@@ -139,17 +139,10 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
     #Calcul des coordonnées de la box d'intersection
     x3 = max(x1, x2)
     y3 = max(y1, y2)
-    
-    #print(x3)
-    #print(y3)
 
     #Calcul de la largeur et de la hauteur de la box
     x4 = min(x1+w1, x2+w2)
     y4 = min(y1+h1, y2+h2)
-    
-    #print(x4)
-    #print(y4)
-
     
     if ((x3 >= x4) | (y3 >= y4)):
         #Pas d'intersection
@@ -210,6 +203,7 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, l
                 if ((intersection < limit) & (n < number)):
                     
                     box = image_resize[top:top+box_height, left:left+box_width]
+                    box = color_to_grey(box)
                     scipy.misc.imsave(origin_path+'\\neg\\negative'+str(num)+'-'+str(n)+".jpg", box)
                     fd_hog[n] = feature.hog(box)
                     n = n + 1
@@ -225,6 +219,7 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, l
 def get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height):
      box = image[label_y:label_y+label_height, label_x:label_x+label_width]
      box = resize(box, (box_height, box_width))
+     box = color_to_grey(box)
      scipy.misc.imsave(origin_path+'\\label\\box'+str(num)+'.jpg', box) 
      fd_hog = feature.hog(box)
      
@@ -238,7 +233,6 @@ def generate_data(images, labels, box_width, box_height, jump, limit, number):
     for img in images:
         
         image = io.imread(img)
-        image = color_to_grey(image)
         
         num = get_num(img) 
         
@@ -258,7 +252,7 @@ def generate_data(images, labels, box_width, box_height, jump, limit, number):
         fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height)
         fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)
         n = n + 1
-        return fd_hog_pos, fd_hog_neg
+    return fd_hog_pos, fd_hog_neg
         
 
 def generate_train_data(path, box_width, box_height, jump, limit, number):
@@ -266,32 +260,7 @@ def generate_train_data(path, box_width, box_height, jump, limit, number):
     labels = get_labels()
     images = get_images(path)
    
-#    fd_hog_pos = np.zeros(shape=(len(images), hog), dtype=float)
-#    fd_hog_neg = np.zeros(shape=(0, hog), dtype=float)
-#    for img in images:
-#        
-#        image = io.imread(img)
-#        image = color.rgb2gray(image)
-#        
-#        num = get_num(img) 
-#        
-#        # On récupère les valeurs associées aux labels dans les fichiers
-#        label_y = labels[num-1]["y"]
-#        label_x = labels[num-1]["x"]
-#        label_width = labels[num-1]["width"]
-#        label_height = labels[num-1]["height"]        
-#
-#        # On récupère les box positives, on calcule le hog que l'on sauvegarde dans un tableau, et on sauvegarde aussi les images
-#        fd_hog_pos[p] = get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height)
-#        p = p + 1
-#
-#        # On recherche des images négatives avec une fenêtre glissante dont la taille est adaptée à la taille de l'image
-#        fd_hog = np.zeros(shape=(number, hog), dtype=float)
-#        
-#        fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height)
-#        fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)
-#        n = n + 1
-    fd_hog_pos, fd_hog_neg = generate_data(images, labels, box_width, bow_height, jump, limit, number)
+    fd_hog_pos, fd_hog_neg = generate_data(images, labels, box_width, box_height, jump, limit, number)
         
     return fd_hog_pos, fd_hog_neg
 

@@ -27,8 +27,8 @@ import scipy.misc
 import matplotlib.pyplot as plt
 clf = svm.LinearSVC()
 #origin_path = "C:\\Users\\sy32p009\\Documents\\SY32_PART2\\TD 02 - Classification dimages-20180409\\imageface\\imageface\\"
-#origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
-origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
+origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
+#origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
 hog = 648
 def read_img_float(path):
     os.chdir(origin_path+path)
@@ -121,7 +121,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     min_length = min(image_width, image_height)
     
     #Les résultats seront stockés dans un tableau
-    results = np.zeros(shape=(1, 5), dtype = float)   
+    results = np.zeros(shape=(0, 5), dtype = float)   
     nb_results = 0
     
     x = -100
@@ -129,7 +129,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On itère jusqu'à trouver un visage en changeant la taille de l'image d'origine
     #On pourrait comparer plusieurs tailles d'image
-    while (x == -100 and r < 5):
+    while (x == -100 or r < 2):
         top = 0
         left = 0
         
@@ -165,35 +165,31 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
                         window_height = int(box_height/ratio)
                         
                         #Trier le tableau par ordre décroissant de score
-                        k = 0
-                        while (k < nb_results) & (new_score < results[k][4]):
-                            k = k + 1
-                        #if k < nb_results:
-                        results = np.insert(results, k, [window_x, window_y, window_width, window_height, new_score], axis=0)
-                        #print(results)
+                        results = np.insert(results, nb_results, [window_x, window_y, window_width, window_height, new_score], axis=0)
                         nb_results = nb_results + 1
+                        #print("Results avant tri", results) 
+                        #print("Results après tri", results)
 
                                 
                 left = left + jump
             #print("fin ligne")
             left = 0
             top = top + jump
-            
-    results, nb_results = non_maxima(results, nb_results-1)
+    
+    results = results[results[:, 4].argsort()]            
+    results = non_maxima(results)
 
            
     #On enregistre les résultats dans un fichier
     k = 0
-    for result in results[:nb_results+1]:
+    for result in results:
         k = k +1
         window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
         scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
-        #file = open(origin_path+"\\label_result.txt", "a")
-        #file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
-        #file.close()
-    file = open(origin_path+"\\label_result.txt", "a")
-    file.write(str(num)+" "+str(int(results[0][0]))+" "+str(int(results[0][1]))+" "+str(int(results[0][2]))+" "+str(int(results[0][3]))+" "+str(results[0][4])+"\n")
-    file.close()
+        file = open(origin_path+"\\label_result.txt", "a")
+        file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
+        file.close()
+        print("Score final", results[0][4])
                    
     return results
 
@@ -201,23 +197,21 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
 def detect_face_script(clf, path, box_width, box_height, min_score, jump):
     return detect_faces(clf, path, box_width, box_height, min_score, jump)
 
-def non_maxima(results, nb_results): 
-    i = nb_results #dernier index
-    
-    #print("i", i)
-    #print("results", results)
-    while i >= 0:
-        j = i-1  
+def non_maxima(results): 
+    i = 0 
+    while i <= (len(results)-2):
+        j = i+1  
         continu = 1
-        while (j >= 0) & (continu == 1):
+        while (j <= (len(results)-1)) & (continu == 1):
             intersection = intersect(results[i][0], results[i][1], results[i][2], results[i][3], results[j][0], results[j][1], results[j][2], results[j][3])
             if intersection > 0:
-                #print("Resultat", results)
+                print("Resultat supprimé", results[i][4])
                 results = np.delete(results, i, axis=0)
-                print("Resultat supprimé")
-                nb_results = nb_results - 1
+                #print("Resultat supprimé")
                 continu = 0
-            j = j-1
-        i= i-1
+            else:
+                j = j+1
+        if (continu == 1):
+            i= i+1
     
-    return results, nb_results
+    return results
