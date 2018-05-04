@@ -83,66 +83,57 @@ def get_box_size():
     
     
 
-def color_to_grey(image_color):
-    red = 0.7
-    green = 0.3
-    blue = 0
-    if (type(image_color[1][1]) is np.ndarray):
-    
-        # on va peut être jouer sur la saturation des couleurs après alors je la met de coté
-        img_grey = np.zeros(shape=(len(image_color), len(image_color[0])), dtype=float)
-        
-        for i in range(0,len(image_color)):
-            for j in range(0,len(image_color[1])):
-                img_grey[i][j] = (image_color[i][j][0]*red + image_color[i][j][1]*green + image_color[i][j][2]*blue)/255
-                if(img_grey[i][j] > 1):
-                    img_grey[i][j] = 1
-                if(img_grey[i][j] < 0):
-                    img_grey[i][j] = 0
-                    
-        return img_grey
-    else:
-        return color.rgb2grey(image_color)
 #def color_to_grey(image_color):
-#
-#     #couleur d'un visage "moyen"
-#    face_R = 180
-#    face_G = 126
-#    face_B = 100
+#    red = 0.7
+#    green = 0.3
+#    blue = 0
 #    if (type(image_color[1][1]) is np.ndarray):
 #    
 #        # on va peut être jouer sur la saturation des couleurs après alors je la met de coté
 #        img_grey = np.zeros(shape=(len(image_color), len(image_color[0])), dtype=float)
-#        img_hsv = color.rgb2hsv(image_color)
-#        img_ycbcr = color.rgb2ycbcr(image_color)
+#        
 #        for i in range(0,len(image_color)):
 #            for j in range(0,len(image_color[1])):
-#                
-##                0.0 <= H <= 50.0 and 0.23 <= S <= 0.68 and
-##R > 95 and G > 40 and B > 20 and R > G and R > B
-##and | R - G | > 15 and A > 15 https://arxiv.org/ftp/arxiv/papers/1708/1708.02694.pdf
-#
-#                
-#                R = image_color[i][j][0]
-#                G = image_color[i][j][1]
-#                B = image_color[i][j][2]
-#                H = img_hsv[i][j][0]
-#                S = img_hsv[i][j][1]
-#                if((H >= 0 and H <= (50.0/255)) and (S >= 0.23 and S <= 0.68) and (R > 95) and (G > 40) and (B > 20) and (R > G) and (R > B) and (abs(R-G)>15)):
-#                    img_grey[i][j]= 0.9999999999
-#                else: 
-#                    img_grey[i][j]= 0.00000000001
-##                img_grey[i][j] = math.sqrt( R*R + G*G + B*B)/442
-##                if(img_grey[i][j] > 1):
-##                    img_grey[i][j] = 1
-##                if(img_grey[i][j] < 0):
-##                    img_grey[i][j] = 0
+#                img_grey[i][j] = (image_color[i][j][0]*red + image_color[i][j][1]*green + image_color[i][j][2]*blue)/255
+#                if(img_grey[i][j] > 1):
+#                    img_grey[i][j] = 1
+#                if(img_grey[i][j] < 0):
+#                    img_grey[i][j] = 0
 #                    
 #        return img_grey
 #    else:
-#        return color.rgb2grey(image_color)        
+#        return color.rgb2grey(image_color)
+def color_to_grey(image_color):
+
+     #couleur d'un visage "moyen"
+    face_R = 180
+    face_G = 126
+    face_B = 100
+    if (type(image_color[1][1]) is np.ndarray):
+    
+        # on va peut être jouer sur la saturation des couleurs après alors je la met de coté
+        img_grey = np.zeros(shape=(len(image_color), len(image_color[0])), dtype=float)
+        for i in range(0,len(image)):
+            for j in range(0,len(image[1])):
+                R = image[i][j][0]-face_R
+                G = image[i][j][1]-face_G
+                B = image[i][j][2]-face_B 
+                img[i][j] = sqrt( R*R + G*G + B*B)/442
+                if(img[i][j] > 1):
+                    img[i][j] = 1
+                if(img[i][j] < 0):
+                    img[i][j] = 0
+#                img_grey[i][j] = math.sqrt( R*R + G*G + B*B)/442
+#                if(img_grey[i][j] > 1):
+#                    img_grey[i][j] = 1
+#                if(img_grey[i][j] < 0):
+#                    img_grey[i][j] = 0
+                    
+        return img_grey
+    else:
+        return color.rgb2grey(image_color)        
      
-# Renvoie le pourcentage d'intersection entre deux boxes
+ Renvoie le pourcentage d'intersection entre deux boxes
 def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
 
     #Calcul des coordonnées de la box d'intersection
