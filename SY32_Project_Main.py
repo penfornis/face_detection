@@ -9,7 +9,9 @@ from SY32_Project_Test import *
 from SY32_Project_Tools import *
 import SY32_Project_Data as data
 
-origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
+#origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
+origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
+
 clf = svm.LinearSVC()
 box_width = 32
 box_height = 49
@@ -30,7 +32,7 @@ fd_hog_pos49, fd_hog_neg49 = data.generate_train_data("\\train", box_width, box_
 
 print("*** Evaluation du modèle ***")
 ###Calculer l'efficacité du modèle
-error, rappel, precision, score = validation_script(fd_hog_pos49, fd_hog_neg49)
+#error, rappel, precision, score = validation_script(fd_hog_pos49, fd_hog_neg49)
 #print("valeurs:", error, precision, score, rappel)
 
 print("*** Préparation des données ***")

@@ -27,8 +27,8 @@ import scipy.misc
 import matplotlib.pyplot as plt
 clf = svm.LinearSVC()
 #origin_path = "C:\\Users\\sy32p009\\Documents\\SY32_PART2\\TD 02 - Classification dimages-20180409\\imageface\\imageface\\"
-origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
-
+#origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
+origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
 hog = 648
 def read_img_float(path):
     os.chdir(origin_path+path)
@@ -46,7 +46,7 @@ def read_img_float(path):
 
 def get_resize_bw_image(name, box_width, box_height):
     image = io.imread(name)
-    image = color.rgb2gray(image)
+    image = color_to_grey(image)
     resize(image, (box_height, box_width))
     return image
 
@@ -109,7 +109,7 @@ def detect_faces(clf, path, box_width, box_height, min_score, jump):
 def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump):
     
     #On passe l'image en noir et blanc
-    image = color.rgb2gray(image_orig)
+    image = color_to_grey(image_orig)
     
     image_width = len(image[0])
     image_height = len(image)
@@ -129,7 +129,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On itère jusqu'à trouver un visage en changeant la taille de l'image d'origine
     #On pourrait comparer plusieurs tailles d'image
-    while (x == -100):
+    while (x == -100 and r < 5):
         top = 0
         left = 0
         
