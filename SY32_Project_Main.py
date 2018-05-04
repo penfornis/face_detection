@@ -28,23 +28,28 @@ negative_nb = 7
 #print("*** Génération des données ***")
 
 #Générer les images d'entraînement
-fd_hog_pos49, fd_hog_neg49 = data.generate_train_data("\\train", box_width, box_height, train_step, train_limit, negative_nb)
 
-print("*** Evaluation du modèle ***")
-###Calculer l'efficacité du modèle
+#fd_hog_pos49, fd_hog_neg49 = data.generate_train_data("\\train", box_width, box_height, train_step, train_limit, negative_nb)
+#
+#print("*** Evaluation du modèle ***")
+####Calculer l'efficacité du modèle
 #error, rappel, precision, score = validation_script(fd_hog_pos49, fd_hog_neg49)
-#print("valeurs:", error, precision, score, rappel)
+##print("valeurs:", error, precision, score, rappel)
+#
+#print("*** Préparation des données ***")
+#fd_hog, label_hog = label_concat(fd_hog_pos49, fd_hog_neg49)
+###
+#
+#print("*** Génération du modèle ***")
+#clf.fit(fd_hog, label_hog)
+###print("*** model OK ***")
+#print("*** Sauvegarde du modèle ***")
+#s = pickle.dump(clf, open (origin_path+"\\save_model.p", "wb"))
+#clf = pickle.load(open(origin_path+"\\save_model.p", "rb"))
+#
+#print("*** Génération des résultats ***")
+#results = detect_face_script(clf, "\\test", box_width, box_height, min_score, 1)
 
-print("*** Préparation des données ***")
-fd_hog, label_hog = label_concat(fd_hog_pos49, fd_hog_neg49)
-##
 
-print("*** Génération du modèle ***")
-clf.fit(fd_hog, label_hog)
-##print("*** model OK ***")
-print("*** Sauvegarde du modèle ***")
-s = pickle.dump(clf, open (origin_path+"\\save_model.p", "wb"))
-clf = pickle.load(open(origin_path+"\\save_model.p", "rb"))
+error_script, n = validation_sliding_window_script("\\train", 5, box_width, box_height, 10, 25, 7)
 
-print("*** Génération des résultats ***")
-results = detect_face_script(clf, "\\test", box_width, box_height, min_score, 1)
