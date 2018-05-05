@@ -94,9 +94,8 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On passe l'image en noir et blanc
     image = color_to_grey(image_orig)
-    scipy.misc.imsave(origin_path+'\\test_color\\'+str(num)+'.jpg', image)
-        
-    
+    #scipy.misc.imsave(origin_path+'\\test_color\\'+str(num)+'.jpg', image)
+           
     image_width = len(image[0])
     image_height = len(image)
     
@@ -115,7 +114,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On itère jusqu'à trouver un visage en changeant la taille de l'image d'origine
     #On pourrait comparer plusieurs tailles d'image
-    while (x == -100 and r < 3):
+    while (x == -100 and r < 10):
         top = 0
         left = 0
         
@@ -170,12 +169,11 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     k = 0
     for result in results:
         k = k +1
-        window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
-        scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
+        #window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
+        #scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
         file = open(origin_path+"\\label_result.txt", "a")
         file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
         file.close()
-        print("Score final", results[0][4])
                    
     return results
 
