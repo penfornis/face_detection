@@ -45,9 +45,8 @@ import scipy.misc
 origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
 #origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
 
-
 ########
-hog = 648
+hog = 648        
 
 #Renvoie le numéro d'une image
 def get_num(img):
@@ -84,13 +83,12 @@ def get_box_size():
     
 def color_to_grey(image_color):
 
-     #couleur d'un visage "moyen"
+    #couleur d'un visage "moyen"
     face_R = 180
     face_G = 126
     face_B = 100
     if (type(image_color[1][1]) is np.ndarray):
     
-        # on va peut être jouer sur la saturation des couleurs après alors je la met de coté
         img_grey = np.zeros(shape=(len(image_color), len(image_color[0])), dtype=float)
         for i in range(0,len(image_color)):
             for j in range(0,len(image_color[1])):
@@ -102,11 +100,6 @@ def color_to_grey(image_color):
                     img_grey[i][j] = 1
                 if(img_grey[i][j] < 0):
                     img_grey[i][j] = 0
-#                img_grey[i][j] = math.sqrt( R*R + G*G + B*B)/442
-#                if(img_grey[i][j] > 1):
-#                    img_grey[i][j] = 1
-#                if(img_grey[i][j] < 0):
-#                    img_grey[i][j] = 0
                     
         return img_grey
     else:
@@ -177,7 +170,6 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, l
                         
                 #On calcule l'intersection entre la fenêtre glissante et le label
                 intersection = intersect(window_x, window_y, window_width, window_height, label_x, label_y, label_width, label_height)
-                #print(intersection)
                 
                 if ((intersection < limit) & (n < number)):
                     
@@ -200,13 +192,17 @@ def get_positive_box(image, num, label_x, label_y, label_width, label_height, bo
      box = resize(box, (box_height, box_width))
      box = color_to_grey(box)
      scipy.misc.imsave(origin_path+'\\label\\box'+str(num)+'.jpg', box) 
+     box_sym = np.fliplr(box)
+     scipy.misc.imsave(origin_path+'\\label\\sym'+str(num)+'.jpg', box_sym)
      fd_hog = feature.hog(box)
+     fd_hog_sym = feature.hog(box_sym)
      
-     return fd_hog
+     return fd_hog, fd_hog_sym
  
 def generate_data(images, labels, box_width, box_height, jump, limit, number):
     p = 0 #index du tableau des images positives
     n = 0 #index du tableau des images négatives    
+    fd_hog_sym = np.zeros(shape=(len(images), hog), dtype=float)
     fd_hog_pos = np.zeros(shape=(len(images), hog), dtype=float)
     fd_hog_neg = np.zeros(shape=(0, hog), dtype=float)
     for img in images:
@@ -222,7 +218,7 @@ def generate_data(images, labels, box_width, box_height, jump, limit, number):
         label_height = labels[num-1]["height"]        
 
         # On récupère les box positives, on calcule le hog que l'on sauvegarde dans un tableau, et on sauvegarde aussi les images
-        fd_hog_pos[p] = get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height)
+        fd_hog_pos[p], fd_hog_sym[p] = get_positive_box(image, num, label_x, label_y, label_width, label_height, box_width, box_height)
         p = p + 1
 
         # On recherche des images négatives avec une fenêtre glissante dont la taille est adaptée à la taille de l'image
@@ -231,6 +227,7 @@ def generate_data(images, labels, box_width, box_height, jump, limit, number):
         fd_hog = get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height)
         fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)
         n = n + 1
+    fd_hog_pos = np.concatenate((fd_hog_pos, fd_hog_sym), axis=0)
     return fd_hog_pos, fd_hog_neg
         
 
@@ -242,8 +239,3 @@ def generate_train_data(path, box_width, box_height, jump, limit, number):
     fd_hog_pos, fd_hog_neg = generate_data(images, labels, box_width, box_height, jump, limit, number)
         
     return fd_hog_pos, fd_hog_neg
-
-#fd_hog_pos32, fd_hog_neg32 = generate_train_data("\\train", 32, 32, 10, 10)
-
-#32*32 => hog
-#32*49 => 648

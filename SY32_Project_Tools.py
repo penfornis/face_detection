@@ -41,16 +41,6 @@ def read_img_float(path):
         j = j+1
     return image_float
     
-#def rgb2gray(rgb):
-#	return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
-
-def get_resize_bw_image(name, box_width, box_height):
-    image = io.imread(name)
-    image = color_to_grey(image)
-    resize(image, (box_height, box_width))
-    return image
-    
-    
 def show_mean(path):
     image_float = read_img_float(path)
     
@@ -94,8 +84,7 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     
     #On passe l'image en noir et blanc
     image = color_to_grey(image_orig)
-    #scipy.misc.imsave(origin_path+'\\test_color\\'+str(num)+'.jpg', image)
-           
+    
     image_width = len(image[0])
     image_height = len(image)
     
@@ -152,8 +141,6 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
                         #Trier le tableau par ordre décroissant de score
                         results = np.insert(results, nb_results, [window_x, window_y, window_width, window_height, new_score], axis=0)
                         nb_results = nb_results + 1
-                        #print("Results avant tri", results) 
-                        #print("Results après tri", results)
 
                                 
                 left = left + jump
@@ -169,8 +156,9 @@ def sliding_window(clf, image_orig, num, box_width, box_height, min_score, jump)
     k = 0
     for result in results:
         k = k +1
-        window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
-        scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
+        #Sauvegarder les images dans un dossier
+        #window = image[int(result[1]):int(result[1])+int(result[3]), int(result[0]):int(result[0])+int(result[2])]
+        #scipy.misc.imsave(origin_path+'\\results_s\\positive'+str(num)+"-"+str(k)+".jpg", window)
         file = open(origin_path+"\\label_result.txt", "a")
         file.write(str(num)+" "+str(int(result[0]))+" "+str(int(result[1]))+" "+str(int(result[2]))+" "+str(int(result[3]))+" "+str(result[4])+"\n")
         file.close()
@@ -189,9 +177,7 @@ def non_maxima(results):
         while (j <= (len(results)-1)) & (continu == 1):
             intersection = intersect(results[i][0], results[i][1], results[i][2], results[i][3], results[j][0], results[j][1], results[j][2], results[j][3])
             if intersection > 0:
-                print("Resultat supprimé", results[i][4])
                 results = np.delete(results, i, axis=0)
-                #print("Resultat supprimé")
                 continu = 0
             else:
                 j = j+1
