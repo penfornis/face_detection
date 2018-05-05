@@ -74,10 +74,8 @@ def validation_script(pos, neg):
 #Test de la fenêtre glissante
 ######
 
-def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_height):
+def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_height, min_score, jump):
         
-    min_score = 0.2
-    jump = 3
     print("Début de la validation croisée")
     r = np.zeros(N, dtype = float)
     n=0
@@ -145,8 +143,8 @@ def cross_validation_sliding_window(images, labels, x, y, N, box_width, box_heig
     error = np.mean(r)*100
     return error, n
 
-def validation_sliding_window_script(path, pos, neg, box_width, box_height): 
+def validation_sliding_window_script(path, pos, neg, box_width, box_height, min_score, jump): 
     labels = get_labels()
     images = get_images(path)
     train, label = label_concat(pos,neg)
-    return cross_validation_sliding_window(images, labels, train, label, 5, box_width, box_height)  
+    return cross_validation_sliding_window(images, labels, train, label, 5, box_width, box_height, min_score, jump)  
