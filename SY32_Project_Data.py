@@ -5,45 +5,25 @@ Created on Sun Apr 15 19:02:04 2018
 @author: arnau
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 15 19:02:04 2018
-
-@author: arnau
-"""
-
 import os
 import glob
-#from SY32_Project_Path import *
+import pickle
 
 import time 
 import math
 
+import numpy as np 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from skimage import data, color
-from skimage import feature
+from skimage import data, color, feature, util
 from skimage.transform import rescale, resize, downscale_local_mean
 
-#########
-
-
-import numpy as np 
 from sklearn import svm
-from skimage import util
 from sklearn.utils import shuffle
-
-import pickle
-
-from skimage import *
-import os
-import glob
 
 import scipy.misc
 
-origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
-#origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
 
 ########
 hog = 648        
@@ -56,19 +36,17 @@ def get_num(img):
 
 # Renvoe un tableau contenant tous les labels
 def get_labels():
-    os.chdir(origin_path)
     labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
     return labels
 
 # Renvoie une liste contenant le nom des images
 def get_images(path):
-    os.chdir(origin_path+path)
+    os.chdir(path)
     images = glob.glob("*.jpg")
     return images
     
 #Renvoie la taille moyenne d'une box d'après les labels
 def get_box_size():
-    os.chdir(origin_path)
     labels = np.loadtxt("label.txt",dtype={'names': ('name','x', 'y', 'width', 'height'),'formats':('S4','i4','i4','i4','i4')})
     width = 0
     height = 0
@@ -88,16 +66,19 @@ def color_to_grey(image_color):
     face_G = 126
     face_B = 100
     if (type(image_color[1][1]) is np.ndarray):
-    
         img_grey = np.zeros(shape=(len(image_color), len(image_color[0])), dtype=float)
+
         for i in range(0,len(image_color)):
+        
             for j in range(0,len(image_color[1])):
                 R = image_color[i][j][0]-face_R
                 G = image_color[i][j][1]-face_G
                 B = image_color[i][j][2]-face_B 
                 img_grey[i][j] = math.sqrt( R*R + G*G + B*B)/442
+
                 if(img_grey[i][j] > 1):
                     img_grey[i][j] = 1
+
                 if(img_grey[i][j] < 0):
                     img_grey[i][j] = 0
                     
@@ -131,7 +112,7 @@ def intersect(x1, y1, w1, h1, x2, y2, w2, h2):
     	
         return ratio
 
-#Selectionne des images négatives à partir des labels
+# Selectionne des images négatives à partir des labels
 # Limit désigne le seuil d'intersection avec le label positif acceptable (0 = pas d'intersection)
 # Jump désigne le pas de déplacement de la fenêtre glissante
 def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, label_x, label_y, label_width, label_height):
@@ -162,7 +143,6 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, l
         for i in range(0, (len(image_resize)-box_height)//jump):
             for j in range(0, (len(image_resize[0])-box_width)//jump):
                 
-                
                 window_x = int(left/ratio)
                 window_y = int(top/ratio)
                 window_width = int(box_width/ratio)
@@ -175,7 +155,7 @@ def get_negative_boxes(image, num, box_width, box_height, jump, limit, number, l
                     
                     box = image_resize[top:top+box_height, left:left+box_width]
                     box = color_to_grey(box)
-                    scipy.misc.imsave(origin_path+'\\neg\\negative'+str(num)+'-'+str(n)+".jpg", box)
+                    scipy.misc.imsave('neg\\negative'+str(num)+'-'+str(n)+".jpg", box)
                     fd_hog[n] = feature.hog(box)
                     n = n + 1
                 left = left + jump
@@ -191,9 +171,9 @@ def get_positive_box(image, num, label_x, label_y, label_width, label_height, bo
      box = image[label_y:label_y+label_height, label_x:label_x+label_width]
      box = resize(box, (box_height, box_width))
      box = color_to_grey(box)
-     scipy.misc.imsave(origin_path+'\\label\\box'+str(num)+'.jpg', box) 
+     scipy.misc.imsave('label\\box'+str(num)+'.jpg', box) 
      box_sym = np.fliplr(box)
-     scipy.misc.imsave(origin_path+'\\label\\sym'+str(num)+'.jpg', box_sym)
+     scipy.misc.imsave('label\\sym'+str(num)+'.jpg', box_sym)
      fd_hog = feature.hog(box)
      fd_hog_sym = feature.hog(box_sym)
      
@@ -228,11 +208,11 @@ def generate_data(images, labels, box_width, box_height, jump, limit, number):
         fd_hog_neg = np.insert(fd_hog_neg, n, fd_hog, axis=0)
         n = n + 1
     fd_hog_pos = np.concatenate((fd_hog_pos, fd_hog_sym), axis=0)
+
     return fd_hog_pos, fd_hog_neg
         
 
 def generate_train_data(path, box_width, box_height, jump, limit, number):
-    
     labels = get_labels()
     images = get_images(path)
    

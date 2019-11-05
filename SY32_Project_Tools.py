@@ -6,32 +6,26 @@ Created on Mon Apr  9 10:32:03 2018
 """
 
 import numpy as np 
+import matplotlib.pyplot as plt
+
 from sklearn import svm
-from skimage import util
 from sklearn.utils import shuffle
 
-import pickle
-
-from skimage import io
-from skimage import feature
-from skimage import color
+from skimage import io, feature, color, util
 from skimage.transform import rescale, resize, downscale_local_mean
+
 import os
 import glob
+import pickle
 
 from PIL import Image
 from SY32_Project_Data import *
 import scipy.misc
 
-
-import matplotlib.pyplot as plt
 clf = svm.LinearSVC()
-#origin_path = "C:\\Users\\sy32p009\\Documents\\SY32_PART2\\TD 02 - Classification dimages-20180409\\imageface\\imageface\\"
-origin_path = "C:\\Users\\Eléonore\\Documents\\UTC\\GI04\\SY32\\Projet\\SY32_Reconnaissance_Visages"
-#origin_path = "C:\\Users\\arnau\\Documents\\dev\\P18\\SY32"
-hog = 648
+
 def read_img_float(path):
-    os.chdir(origin_path+path)
+    os.chdir(path)
     images = glob.glob("*.jpg")
     
     j = 0
@@ -43,9 +37,7 @@ def read_img_float(path):
     
 def show_mean(path):
     image_float = read_img_float(path)
-    
     mean = np.mean(image_float, axis=0)
-    
     mean_display = io.imshow(mean)
     plt.show(mean_display)
 
@@ -64,11 +56,13 @@ def label_concat(pos, neg):
     
     
 def save_model(clf, file_name):
-    s = pickle.dump(clf, open (origin_path+file_name, "wb"))
+    with open (file_name, "wb") as f:
+        s = pickle.dump(clf, f)
     
 def load_model(file_name):
-     my_clf=pickle.load(open(file_name, "rb"))
-     return my_clf
+    with open(file_name, "rb") as f:
+        my_clf = pickle.load(f)
+    return my_clf
  
 def detect_faces(clf, path, box_width, box_height, min_score, jump):
     images = get_images(path)
